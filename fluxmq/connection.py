@@ -67,7 +67,10 @@ class FluxMQ:
             return e
 
     async def Respond(self, message, data):
-        await message.respond(data)
+        try:
+            await message.Respond(data)
+        except ValueError as e:
+            self.logger.error(e)
 
     async def Close(self):
         if hasattr(self, 'unsubscribe_task'):
