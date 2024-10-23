@@ -76,8 +76,8 @@ class FluxMQ:
 
     async def Call(self, topic, data):
         try:
-            resp = await self.connection.request(topic, data.encode(), timeout=1)
-            return Message.new_domain_message(resp)
+            resp = await self.connection.request(topic, data, timeout=1)
+            return Message.newDomainMsg(resp)
         except Exception as e:
             if 'No Responders' in str(e):
                 self.logger.error(f"No responders for topic: {topic}")
