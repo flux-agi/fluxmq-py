@@ -37,7 +37,6 @@ Tracker = "https://github.com/kristobalus/fluxmq/issues"
 [tool.commitizen]
 name = "cz_conventional_commits"
 tag_format = "$version"
-version = "0.1.0"
 version_scheme = "pep440"
 version_provider = "pep621"
 update_changelog_on_bump = true
