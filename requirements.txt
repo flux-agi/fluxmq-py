@@ -1,2 +1,0 @@
-asyncio==3.4.3
-nats-py==2.9.0
