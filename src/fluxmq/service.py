@@ -8,7 +8,7 @@ from asyncio.queues import Queue
 from transport import Transport
 from message import Message
 from topicfactory import TopicFactory
-from status import DStatus
+from status import Status
 
 
 class Service:
@@ -36,7 +36,7 @@ class Service:
         await self.transport.connect()
         await self.__subscribe_configuration()
         await self.__subscribe_control()
-        await self.send_status(DStatus.READY | DStatus.STOPPED)
+        await self.send_status(Status.READY)
 
         if shutdown_on_sigterm:
             signal.signal(signal.SIGTERM, self.__graceful_shutdown)

@@ -2,7 +2,7 @@ from enum import Enum
 from enum import IntFlag
 
 
-class SStatus(Enum):
+class Status(Enum):
     READY = "ready"
     STOPPED = "stopped"
     RUNNING = "running"
@@ -13,3 +13,8 @@ class DStatus(IntFlag):
     STOPPED = 2  # 0b0010
     RUNNING = 4  # 0b0100
     ERROR = 8  # 0b1000
+
+
+"""
+use like DStatus.READY | DStatus.STOPPED, DStatus.READY | DStatus.RUNNING
+"""
