@@ -1,6 +1,6 @@
 import asyncio
 from logging import getLogger
-from fluxmq.adapter.mqtt import MQTT, Topic
+from adapter.mqtt import MQTT, Topic
 from runtime_service import RuntimeService
 
 

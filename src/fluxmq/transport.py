@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from asyncio.queues import Queue
-from fluxmq.message import Message
+from message import Message
 
 
 class Transport(ABC):

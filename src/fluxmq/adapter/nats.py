@@ -1,15 +1,15 @@
 import asyncio
 from logging import Logger, getLogger
 from asyncio import Queue
-from typing import Any, Dict
+from typing import Dict
 
 import nats
 from nats.aio.msg import Msg
 from nats.aio.subscription import Subscription
 
-from fluxmq.message import Message
+from message import Message
 from transport import Transport
-from fluxmq.topicfactory import TopicFactory
+from topicfactory import TopicFactory
 
 
 class Nats(Transport):

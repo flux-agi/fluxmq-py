@@ -5,10 +5,10 @@ import sys
 from logging import Logger, getLogger
 from asyncio.queues import Queue
 
-from fluxmq.transport import Transport
-from fluxmq.message import Message
-from fluxmq.topicfactory import TopicFactory
-from fluxmq.status import DStatus
+from transport import Transport
+from message import Message
+from topicfactory import TopicFactory
+from status import DStatus
 
 
 class Service:
