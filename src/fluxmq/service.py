@@ -36,7 +36,7 @@ class Service:
         await self.transport.connect()
         await self.__subscribe_configuration()
         await self.__subscribe_control()
-        await self.send_status(Status.READY)
+        await self.send_status(Status.UP)
 
         if shutdown_on_sigterm:
             signal.signal(signal.SIGTERM, self.__graceful_shutdown)
@@ -81,8 +81,10 @@ class Service:
         task.add_done_callback(lambda t: None)
 
     def __graceful_shutdown(self, signal_number, frame):
-        self.on_shutdown(signal_number, frame)
         self.logger.debug("Shutting down gracefully %s, %s...", signal_number, frame)
+        self.send_status(Status.DOWN)
+        self.on_shutdown(signal_number, frame)
+        self.transport.close()
         sys.exit(0)
 
     async def subscribe(self, topic: str) -> Queue:

@@ -7,9 +7,9 @@ import nats
 from nats.aio.msg import Msg
 from nats.aio.subscription import Subscription
 
-from message import Message
-from transport import Transport
-from topicfactory import TopicFactory
+from fluxmq.message import Message
+from fluxmq.transport import Transport
+from fluxmq.topicfactory import TopicFactory
 
 
 class Nats(Transport):
@@ -56,6 +56,9 @@ class Nats(Transport):
     async def respond(self, message: Message, response: bytes):
         if message.reply is not None:
             await self.connection.publish(message.reply)
+
+    async def close(self) -> None:
+        await self.connection.close()
 
 
 class Topic(TopicFactory):

@@ -3,9 +3,10 @@ from enum import IntFlag
 
 
 class Status(Enum):
-    READY = "ready"
+    UP = "up"
+    DOWN = "down"
+    STARTED = "started"
     STOPPED = "stopped"
-    RUNNING = "running"
 
 
 class DStatus(IntFlag):

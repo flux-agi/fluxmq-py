@@ -9,6 +9,10 @@ class Transport(ABC):
         pass
 
     @abstractmethod
+    async def close(self) -> None:
+        pass
+
+    @abstractmethod
     async def publish(self, topic: str, payload: bytes):
         pass
 

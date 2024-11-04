@@ -1,11 +1,14 @@
 from asyncio import Queue
 
-from message import Message
-from transport import Transport
-from topicfactory import TopicFactory
+from fluxmq.message import Message
+from fluxmq.transport import Transport
+from fluxmq.topicfactory import TopicFactory
 
 
 class MQTT(Transport):
+    async def close(self) -> None:
+        pass
+
     async def connect(self) -> None:
         pass
 
