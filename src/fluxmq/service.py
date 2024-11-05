@@ -8,12 +8,13 @@ from asyncio.queues import Queue
 from transport import Transport
 from message import Message
 from topicfactory import TopicFactory
-from status import Status
+from statusfactory import StatusFactory
 
 
 class Service:
     transport: Transport
-    topic_factory: TopicFactory
+    topic: TopicFactory
+    status: StatusFactory
     id: str
 
     def __init__(self,
@@ -25,18 +26,19 @@ class Service:
 
     def attach(self,
                transport: Transport,
-               topic_factory: TopicFactory):
+               topic: TopicFactory, status: StatusFactory) -> None:
         self.transport = transport
-        self.topic_factory = topic_factory
+        self.topic = topic
+        self.status = status
         return
 
     async def run(self,
-                  shutdown_on_sigterm=True):
+                  shutdown_on_sigterm=True) -> None:
 
         await self.transport.connect()
         await self.__subscribe_configuration()
         await self.__subscribe_control()
-        await self.send_status(Status.UP)
+        await self.send_status(self.status.up())
 
         if shutdown_on_sigterm:
             signal.signal(signal.SIGTERM, self.__graceful_shutdown)
@@ -44,7 +46,7 @@ class Service:
         return
 
     async def __subscribe_configuration(self):
-        topic = self.topic_factory.configuration(self.id)
+        topic = self.topic.configuration(self.id)
         queue: Queue = await self.subscribe(topic)
 
         async def read_queue(queue: asyncio.queues.Queue[Message]):
@@ -56,7 +58,7 @@ class Service:
         task.add_done_callback(lambda t: None)
 
     async def __subscribe_control(self):
-        topic = self.topic_factory.control(self.id)
+        topic = self.topic.control(self.id)
         queue: Queue = await self.subscribe(topic)
 
         async def read_queue(queue: asyncio.queues.Queue[Message]):
@@ -68,7 +70,7 @@ class Service:
         task.add_done_callback(lambda t: None)
 
     async def __subscribe_time(self):
-        topic = self.topic_factory.time()
+        topic = self.topic.time()
         queue: Queue = await self.subscribe(topic)
 
         async def read_queue(queue: asyncio.queues.Queue[Message]):
@@ -82,7 +84,7 @@ class Service:
 
     def __graceful_shutdown(self, signal_number, frame):
         self.logger.debug("Shutting down gracefully %s, %s...", signal_number, frame)
-        self.send_status(Status.DOWN)
+        self.send_status(self.status.down())
         self.on_shutdown(signal_number, frame)
         self.transport.close()
         sys.exit(0)
@@ -108,7 +110,7 @@ class Service:
         return
 
     async def send_status(self, status: str):
-        topic = self.topic_factory.status(self.id)
+        topic = self.topic.status(self.id)
         await self.transport.publish(topic, status)
 
     def on_configuration(self, message: Message):

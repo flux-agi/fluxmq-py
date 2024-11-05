@@ -7,9 +7,10 @@ import nats
 from nats.aio.msg import Msg
 from nats.aio.subscription import Subscription
 
-from fluxmq.message import Message
-from fluxmq.transport import Transport
-from fluxmq.topicfactory import TopicFactory
+from fluxmq.service.message import Message
+from fluxmq.service.statusfactory import StatusFactory
+from fluxmq.service.transport import Transport
+from fluxmq.service.topicfactory import TopicFactory
 
 
 class Nats(Transport):
@@ -62,6 +63,9 @@ class Nats(Transport):
 
 
 class Topic(TopicFactory):
+    def request_configuration(self, service_id: str):
+        return f"service/get_config"
+
     def time(self):
         return "time"
 
@@ -73,3 +77,17 @@ class Topic(TopicFactory):
 
     def configuration(self, service_id: str):
         return f"service.{service_id}.configuration"
+
+
+class StatusFactoryImpl(StatusFactory):
+    def up(self):
+        return "up"
+
+    def down(self):
+        return "down"
+
+    def started(self):
+        return "ready"
+
+    def stopped(self):
+        return "paused"

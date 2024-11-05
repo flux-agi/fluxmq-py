@@ -18,3 +18,11 @@ class TopicFactory(ABC):
     def time(self):
         pass
 
+    @abstractmethod
+    def send_configuration(self, service_id: str):
+        pass
+
+    @abstractmethod
+    def send_status(self, service_id: str):
+        pass
+

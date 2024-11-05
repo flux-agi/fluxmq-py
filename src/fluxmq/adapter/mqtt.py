@@ -1,8 +1,9 @@
 from asyncio import Queue
 
-from fluxmq.message import Message
-from fluxmq.transport import Transport
-from fluxmq.topicfactory import TopicFactory
+from fluxmq.service.message import Message
+from fluxmq.service.transport import Transport
+from fluxmq.service.topicfactory import TopicFactory
+from fluxmq.service.statusfactory import StatusFactory
 
 
 class MQTT(Transport):
@@ -29,6 +30,9 @@ class MQTT(Transport):
 
 
 class Topic(TopicFactory):
+    def request_configuration(self, service_id: str):
+        return f""
+
     def time(self):
         return f"time"
 
@@ -40,3 +44,17 @@ class Topic(TopicFactory):
 
     def configuration(self, service_id: str):
         return f"service/{service_id}/configuration"
+
+
+class StatusFactoryImpl(StatusFactory):
+    def up(self):
+        return "up"
+
+    def down(self):
+        return "down"
+
+    def started(self):
+        return
+
+    def stopped(self):
+        pass

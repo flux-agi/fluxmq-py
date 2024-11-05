@@ -1,7 +1,7 @@
 from examples.command import Command
-from fluxmq.message import Message
-from fluxmq.service import Service
-from fluxmq.status import Status
+from fluxmq.service.message import Message
+from fluxmq.service.service import Service
+from fluxmq.service.statusfactory import Status
 import json
 
 
