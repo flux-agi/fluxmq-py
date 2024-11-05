@@ -1,3 +1,10 @@
+## 0.3.4 (2024-11-05)
+
+### Fix
+
+- status factory impl
+- paths in imports
+
 ## 0.3.3 (2024-11-05)
 
 ### Fix
