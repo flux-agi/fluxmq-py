@@ -9,7 +9,6 @@ commitizen==3.30.0
 dataclasses==0.6
 decli==0.6.2
 flatbuffers==24.3.25
-fluxmq @ git+https://github.com/kristobalus/fluxmq@02f8b6c8709c36fed5a19e3f2d892dda4634003f
 gast==0.6.0
 google-pasta==0.2.0
 grpcio==1.67.0
@@ -40,9 +39,6 @@ requests==2.32.3
 rich==13.9.3
 setuptools==75.2.0
 six==1.16.0
-tensorboard==2.17.1
-tensorboard-data-server==0.7.2
-tensorflow==2.17.0
 termcolor==2.5.0
 tomlkit==0.13.2
 typing_extensions==4.12.2
