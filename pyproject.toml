@@ -26,11 +26,6 @@ dynamic = ["dependencies"]
 [tool.setuptools.dynamic]
 dependencies = {file = ["requirements.txt"]}
 
-[project.urls]
-Documentation = "https://github.com/flux-agi/fluxmq-py/tree/master#readme"
-Source = "https://github.com/flux-agi/fluxmq-py"
-Tracker = "https://github.com/flux-agi/fluxmq-py/issues"
-
 [tool.commitizen]
 name = "cz_conventional_commits"
 tag_format = "$version"
