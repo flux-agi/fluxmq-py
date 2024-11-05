@@ -77,8 +77,14 @@ class Topic(TopicFactory):
     def configuration(self, service_id: str):
         return f"service.{service_id}.configuration"
 
+    def send_configuration(self, service_id: str):
+        pass
 
-class StatusFactoryImpl(StatusFactory):
+    def send_status(self, service_id: str):
+        pass
+
+
+class Status(StatusFactory):
     def up(self):
         return "up"
 

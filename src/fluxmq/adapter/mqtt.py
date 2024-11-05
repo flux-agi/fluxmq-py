@@ -30,6 +30,12 @@ class MQTT(Transport):
 
 
 class Topic(TopicFactory):
+    def send_configuration(self, service_id: str):
+        pass
+
+    def send_status(self, service_id: str):
+        pass
+
     def request_configuration(self, service_id: str):
         return f""
 
@@ -46,7 +52,7 @@ class Topic(TopicFactory):
         return f"service/{service_id}/configuration"
 
 
-class StatusFactoryImpl(StatusFactory):
+class Status(StatusFactory):
     def up(self):
         return "up"
 
