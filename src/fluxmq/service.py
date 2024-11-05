@@ -1,14 +1,14 @@
+from logging import Logger, getLogger
+
 import asyncio
 import signal
 import sys
-
-from logging import Logger, getLogger
 from asyncio.queues import Queue
 
-from transport import Transport
 from message import Message
-from topicfactory import TopicFactory
 from statusfactory import StatusFactory
+from topicfactory import TopicFactory
+from transport import Transport
 
 
 class Service:

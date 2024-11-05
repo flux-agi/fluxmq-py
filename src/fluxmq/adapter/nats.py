@@ -1,16 +1,15 @@
-import asyncio
-from logging import Logger, getLogger
 from asyncio import Queue
-from typing import Dict
+from logging import Logger, getLogger
 
+import asyncio
 import nats
+from fluxmq.message import Message
+from fluxmq.statusfactory import StatusFactory
+from fluxmq.topicfactory import TopicFactory
+from fluxmq.transport import Transport
 from nats.aio.msg import Msg
 from nats.aio.subscription import Subscription
-
-from fluxmq.service.message import Message
-from fluxmq.service.statusfactory import StatusFactory
-from fluxmq.service.transport import Transport
-from fluxmq.service.topicfactory import TopicFactory
+from typing import Dict
 
 
 class Nats(Transport):

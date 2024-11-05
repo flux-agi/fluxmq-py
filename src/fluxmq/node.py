@@ -1,5 +1,6 @@
-from abc import ABC, abstractmethod
 from logging import Logger
+
+from abc import ABC, abstractmethod
 
 from fluxmq.service import Service
 

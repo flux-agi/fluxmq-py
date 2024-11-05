@@ -1,9 +1,9 @@
 from asyncio import Queue
 
-from fluxmq.service.message import Message
-from fluxmq.service.transport import Transport
-from fluxmq.service.topicfactory import TopicFactory
-from fluxmq.service.statusfactory import StatusFactory
+from fluxmq.message import Message
+from fluxmq.statusfactory import StatusFactory
+from fluxmq.topicfactory import TopicFactory
+from fluxmq.transport import Transport
 
 
 class MQTT(Transport):
