@@ -1,28 +1,56 @@
+import asyncio
 from logging import Logger
-
-from abc import ABC, abstractmethod
+from typing import Dict, Any
+from asyncio import Task
 
 from fluxmq.service import Service
+from asyncio import Queue
 
 
-class Node(ABC):
+class Node:
+    logger: Logger
     service: Service
+    output_topics: Dict[str, str]
+    input_topics: Dict[str, str]
+    input_tasks: list[Task]
+    alias: str
 
     def __init__(self,
                  logger: Logger,
-                 service: Service):
-        self.service = service
+                 service: Service,
+                 alias: str,
+                 output_topics: Dict[str, str],
+                 input_topics: Dict[str, str]):
         self.logger = logger
+        self.service = service
+        self.output_topics = output_topics
+        self.input_topics = input_topics
+        self.alias = alias
 
-    def start(self) -> None:
-        self.on_start()
+    async def start(self) -> None:
+        await self.on_start()
 
-    def stop(self) -> None:
-        self.on_stop()
+        async def read_input_queue(topic: str, queue: Queue):
+            while True:
+                msg = await queue.get()
+                await self.on_input(topic, msg)
 
-    def destroy(self) -> None:
-        self.stop()
-        self.on_destroy()
+        for topic in self.input_topics:
+            queue = await self.service.subscribe(topic)
+            task = asyncio.create_task(read_input_queue(topic, queue))
+            task.add_done_callback(lambda t: None)
+            self.input_tasks.append(task)
+
+    async def stop(self) -> None:
+        await self.on_stop()
+
+        for task in self.input_tasks:
+            task.cancel()
+        self.input_tasks.clear()
+
+    async def destroy(self) -> None:
+        await self.stop()
+        await self.on_destroy()
 
     async def on_start(self) -> None:
         pass
@@ -33,16 +61,5 @@ class Node(ABC):
     async def on_destroy(self) -> None:
         pass
 
-
-class NodeStatus(ABC):
-    pass
-
-
-class NodeTopic(ABC):
-    @abstractmethod
-    def status(self):
-        pass
-
-    @abstractmethod
-    def send_status(self):
+    async def on_input(self, topic: str, msg: Any):
         pass

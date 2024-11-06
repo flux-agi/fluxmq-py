@@ -52,7 +52,7 @@ class Service:
         async def read_queue(queue: asyncio.queues.Queue[Message]):
             while True:
                 message = await queue.get()
-                self.on_configuration(message.payload)
+                await self.on_configuration(message)
 
         task = asyncio.create_task(read_queue(queue))
         task.add_done_callback(lambda t: None)
@@ -64,7 +64,7 @@ class Service:
         async def read_queue(queue: asyncio.queues.Queue[Message]):
             while True:
                 message = await queue.get()
-                self.on_control(message.payload)
+                await self.on_control(message.payload)
 
         task = asyncio.create_task(read_queue(queue))
         task.add_done_callback(lambda t: None)
@@ -77,7 +77,7 @@ class Service:
             while True:
                 message = await queue.get()
                 time = int.from_bytes(message.payload, byteorder='big')
-                self.on_time(time)
+                await self.on_time(time)
 
         task = asyncio.create_task(read_queue(queue))
         task.add_done_callback(lambda t: None)
@@ -113,14 +113,14 @@ class Service:
         topic = self.topic.status(self.id)
         await self.transport.publish(topic, status)
 
-    def on_configuration(self, message: Message):
+    async def on_configuration(self, message: Message):
         pass
 
-    def on_control(self, message: Message):
+    async def on_control(self, message: Message):
         pass
 
-    def on_time(self, time: int):
+    async def on_time(self, time: int):
         pass
 
-    def on_shutdown(self, signal_number, frame):
+    async def on_shutdown(self, signal_number, frame):
         pass
