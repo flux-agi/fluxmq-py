@@ -60,7 +60,7 @@ class Status(StatusFactory):
         return "down"
 
     def started(self):
-        return
+        return "started"
 
     def stopped(self):
-        pass
+        return "stoppped"

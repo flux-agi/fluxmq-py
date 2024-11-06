@@ -14,28 +14,23 @@ class Node(ABC):
         self.service = service
         self.logger = logger
 
-    @abstractmethod
     def start(self) -> None:
         self.on_start()
 
-    @abstractmethod
     def stop(self) -> None:
         self.on_stop()
 
-    @abstractmethod
     def destroy(self) -> None:
+        self.stop()
         self.on_destroy()
 
-    @abstractmethod
-    def on_start(self) -> None:
+    async def on_start(self) -> None:
         pass
 
-    @abstractmethod
-    def on_stop(self) -> None:
+    async def on_stop(self) -> None:
         pass
 
-    @abstractmethod
-    def on_destroy(self) -> None:
+    async def on_destroy(self) -> None:
         pass
 
 
