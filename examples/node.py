@@ -23,25 +23,23 @@ class WorkNode(Node):
 
 
 class WorkService(Service):
-    nodes: list[WorkNode] = []
-
     async def on_configuration(self, message: Message):
         config = json.loads(message.payload.encode())
 
-        for node in self.nodes:
-            await node.stop()
-
-        self.nodes = []
+        await self.stop_nodes()
+        await self.clear_nodes()
 
         for node_config_data in config['nodes']:
-            self.nodes.append(Node(logger=getLogger()))
+            output_topics = node_config_data['output_topics']
+            input_topics = node_config_data['input_topics']
+            alias = node_config_data['alias']
+            self.append_node(Node(logger=getLogger(),
+                                  output_topics=output_topics,
+                                  input_topics=input_topics,
+                                  service=self,
+                                  alias=alias))
 
-        for node in self.nodes:
-            await node.start()
-
-    async def on_shutdown(self, signal_number, frame):
-        for node in self.nodes:
-            await node.stop()
+        await self.start_nodes()
 
 
 def main():

@@ -15,6 +15,14 @@ class TopicFactory(ABC):
         pass
 
     @abstractmethod
+    def start(self, service_id: str):
+        pass
+
+    @abstractmethod
+    def stop(self, service_id: str):
+        pass
+
+    @abstractmethod
     def time(self):
         pass
 

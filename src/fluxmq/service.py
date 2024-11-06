@@ -1,14 +1,17 @@
 from logging import Logger, getLogger
 
 import asyncio
-import signal
 import sys
+import json
+
 from asyncio.queues import Queue
+from signal import signal, SIGTERM
 
 from message import Message
 from statusfactory import StatusFactory
 from topicfactory import TopicFactory
 from transport import Transport
+from node import Node
 
 
 class Service:
@@ -16,6 +19,7 @@ class Service:
     topic: TopicFactory
     status: StatusFactory
     id: str
+    nodes: list[Node]
 
     def __init__(self,
                  service_id=str,
@@ -32,20 +36,32 @@ class Service:
         self.status = status
         return
 
-    async def run(self,
-                  shutdown_on_sigterm=True) -> None:
+    async def run(self) -> None:
 
         await self.transport.connect()
         await self.__subscribe_configuration()
         await self.__subscribe_control()
         await self.send_status(self.status.up())
 
-        if shutdown_on_sigterm:
-            signal.signal(signal.SIGTERM, self.__graceful_shutdown)
+        signal(SIGTERM, self.__graceful_shutdown)
 
         return
 
-    async def __subscribe_configuration(self):
+    async def clear_nodes(self) -> None:
+        self.nodes.clear()
+
+    async def start_nodes(self) -> None:
+        for node in self.nodes:
+            await node.start()
+
+    async def stop_nodes(self) -> None:
+        for node in self.nodes:
+            await node.stop()
+
+    def append_node(self, node: Node) -> None:
+        self.nodes.append(node)
+
+    async def __subscribe_configuration(self) -> None:
         topic = self.topic.configuration(self.id)
         queue: Queue = await self.subscribe(topic)
 
@@ -56,20 +72,23 @@ class Service:
 
         task = asyncio.create_task(read_queue(queue))
         task.add_done_callback(lambda t: None)
+        return
 
-    async def __subscribe_control(self):
+    async def __subscribe_control(self) -> None:
         topic = self.topic.control(self.id)
         queue: Queue = await self.subscribe(topic)
 
         async def read_queue(queue: asyncio.queues.Queue[Message]):
             while True:
                 message = await queue.get()
-                await self.on_control(message.payload)
+                await self.on_control(message)
 
         task = asyncio.create_task(read_queue(queue))
         task.add_done_callback(lambda t: None)
 
-    async def __subscribe_time(self):
+        return
+
+    async def __subscribe_time(self) -> None:
         topic = self.topic.time()
         queue: Queue = await self.subscribe(topic)
 
@@ -82,8 +101,12 @@ class Service:
         task = asyncio.create_task(read_queue(queue))
         task.add_done_callback(lambda t: None)
 
-    def __graceful_shutdown(self, signal_number, frame):
+        return
+
+    def __graceful_shutdown(self, signal_number, frame) -> None:
         self.logger.debug("Shutting down gracefully %s, %s...", signal_number, frame)
+        self.stop_nodes()
+        self.clear_nodes()
         self.send_status(self.status.down())
         self.on_shutdown(signal_number, frame)
         self.transport.close()
