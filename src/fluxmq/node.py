@@ -28,12 +28,19 @@ class Node:
         self.alias = alias
 
     async def start(self) -> None:
-        await self.on_start()
+        try:
+            await self.on_start()
+        except Exception as err:
+            await self.__on_error(err)
+            return
 
         async def read_input_queue(topic: str, queue: Queue):
             while True:
                 msg = await queue.get()
-                await self.on_input(topic, msg)
+                try:
+                    await self.on_input(topic, msg)
+                except Exception as err:
+                    await self.__on_error(err)
 
         for topic in self.input_topics:
             queue = await self.service.subscribe(topic)
@@ -42,11 +49,17 @@ class Node:
             self.input_tasks.append(task)
 
     async def stop(self) -> None:
-        await self.on_stop()
+        try:
+            await self.on_stop()
+        except Exception as err:
+            self.logger.error(err)
+        finally:
+            for task in self.input_tasks:
+                task.cancel()
+            self.input_tasks.clear()
 
-        for task in self.input_tasks:
-            task.cancel()
-        self.input_tasks.clear()
+            for topic in self.input_topics:
+                await self.service.unsubscribe(topic)
 
     async def destroy(self) -> None:
         await self.stop()
@@ -61,5 +74,13 @@ class Node:
     async def on_destroy(self) -> None:
         pass
 
+    async def on_error(self, err: Exception) -> None:
+        pass
+
     async def on_input(self, topic: str, msg: Any):
         pass
+
+    async def __on_error(self, err: Exception) -> None:
+        self.logger.error(err)
+        await self.on_error(err)
+        await self.stop()
