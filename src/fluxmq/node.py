@@ -1,6 +1,6 @@
 import asyncio
 from logging import Logger
-from typing import Dict, Any
+from typing import Dict, Any, Callable
 from asyncio import Task
 
 from fluxmq.service import Service
@@ -14,6 +14,8 @@ class Node:
     input_topics: Dict[str, str]
     input_tasks: list[Task]
     node_id: str
+    status_callback_on_stop: Callable[[], None]
+    status_callback_on_start: Callable[[], None]
 
     def __init__(self,
                  logger: Logger,

@@ -2,16 +2,15 @@ from logging import Logger, getLogger
 
 import asyncio
 import sys
-import json
 
 from asyncio.queues import Queue
 from signal import signal, SIGTERM
 
-from message import Message
-from statusfactory import StatusFactory
-from topicfactory import TopicFactory
-from transport import Transport
-from node import Node
+from fluxmq.message import Message
+from fluxmq.statusfactory import StatusFactory
+from fluxmq.topicfactory import TopicFactory
+from fluxmq.transport import Transport
+from fluxmq.node import Node
 
 
 class Service:
@@ -60,6 +59,15 @@ class Service:
 
     def append_node(self, node: Node) -> None:
         self.nodes.append(node)
+
+        def callback_on_stop():
+            self.send_node_status(node.node_id, self.status.node_stopped(node.node_id))
+
+        def callback_on_start():
+            self.send_node_status(node.node_id, self.status.node_stopped(node.node_id))
+
+        node.status_callback_on_stop = callback_on_stop
+        node.status_callback_on_start = callback_on_start
 
     async def __subscribe_configuration(self) -> None:
         topic = self.topic.configuration(self.id)
@@ -134,6 +142,10 @@ class Service:
 
     async def send_status(self, status: str):
         topic = self.topic.status(self.id)
+        await self.transport.publish(topic, status)
+
+    async def send_node_status(self, node_id: str, status: str):
+        topic = self.topic.node_status(node_id)
         await self.transport.publish(topic, status)
 
     async def on_configuration(self, message: Message):

@@ -40,3 +40,11 @@ class StatusFactory(ABC):
     @abstractmethod
     def stopped(self):
         pass
+
+    @abstractmethod
+    def node_stopped(self, node_id: str):
+        pass
+
+    @abstractmethod
+    def node_started(self, node_id: str):
+        pass

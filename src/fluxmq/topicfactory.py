@@ -7,6 +7,10 @@ class TopicFactory(ABC):
         pass
 
     @abstractmethod
+    def node_status(self, node_id: str):
+        pass
+
+    @abstractmethod
     def configuration(self, service_id: str):
         pass
 
