@@ -2,7 +2,7 @@ from logging import getLogger
 
 import asyncio
 
-from fluxmq.adapter.mqtt import MQTT, Topic, ServiceStatus as Status
+from fluxmq.adapter.mqtt import MQTT, Topic, Status as Status
 from runtime_service import RuntimeService
 
 

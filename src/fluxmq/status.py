@@ -24,7 +24,11 @@ use like DStatus.READY | DStatus.STOPPED, DStatus.READY | DStatus.RUNNING
 """
 
 
-class ServiceStatusFactory(ABC):
+class Status(ABC):
+    """
+    service status factory
+    """
+
     @abstractmethod
     def up(self):
         pass

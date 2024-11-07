@@ -1,8 +1,8 @@
 from asyncio import Queue
 
 from fluxmq.message import Message
-from fluxmq.service_status_factory import ServiceStatusFactory
-from fluxmq.topicfactory import TopicFactory
+from fluxmq.status import Status
+from fluxmq.topic import Topic
 from fluxmq.transport import Transport
 
 
@@ -29,7 +29,19 @@ class MQTT(Transport):
         pass
 
 
-class Topic(TopicFactory):
+class MQTTTopic(Topic):
+    def node_state(self, node_id: str):
+        pass
+
+    def start(self, service_id: str):
+        pass
+
+    def stop(self, service_id: str):
+        pass
+
+    def node_state_request(self, service_id: str):
+        pass
+
     def configuration_request(self, service_id: str):
         pass
 
@@ -52,7 +64,7 @@ class Topic(TopicFactory):
         return f"service/{service_id}/configuration"
 
 
-class ServiceStatus(ServiceStatusFactory):
+class MQTTStatus(Status):
     def node_stopped(self, node_id: str):
         pass
 

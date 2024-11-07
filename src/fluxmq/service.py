@@ -7,16 +7,16 @@ from asyncio.queues import Queue
 from signal import signal, SIGTERM
 
 from fluxmq.message import Message
-from fluxmq.service_status_factory import ServiceStatusFactory
-from fluxmq.topicfactory import TopicFactory
+from fluxmq.status import Status
+from fluxmq.topic import Topic
 from fluxmq.transport import Transport
 from fluxmq.node import Node
 
 
 class Service:
     transport: Transport
-    topic: TopicFactory
-    status: ServiceStatusFactory
+    topic: Topic
+    status: Status
     id: str
     nodes: list[Node]
 
@@ -29,7 +29,7 @@ class Service:
 
     def attach(self,
                transport: Transport,
-               topic: TopicFactory, status: ServiceStatusFactory) -> None:
+               topic: Topic, status: Status) -> None:
         self.transport = transport
         self.topic = topic
         self.status = status

@@ -3,7 +3,7 @@ from logging import Logger
 from typing import Dict, Any, Callable
 from asyncio import Task
 
-from fluxmq.node_state_factory import NodeStateFactory
+from fluxmq.node_state import NodeState
 from fluxmq.service import Service
 from asyncio import Queue
 
@@ -17,13 +17,13 @@ class Node:
     node_id: str
     status_callback_on_stop: Callable[[], None]
     status_callback_on_start: Callable[[], None]
-    state_factory: NodeStateFactory
+    state_factory: NodeState
     state: str
 
     def __init__(self,
                  logger: Logger,
                  service: Service,
-                 state_factory: NodeStateFactory,
+                 state_factory: NodeState,
                  node_id: str,
                  output_topics: Dict[str, str],
                  input_topics: Dict[str, str]):

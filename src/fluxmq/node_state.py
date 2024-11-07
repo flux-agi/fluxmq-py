@@ -1,7 +1,7 @@
 from abc import abstractmethod, ABC
 
 
-class NodeStateFactory(ABC):
+class NodeState(ABC):
     @abstractmethod
     def stopped(self):
         pass

@@ -4,8 +4,8 @@ from logging import Logger, getLogger
 import asyncio
 import nats
 from fluxmq.message import Message
-from fluxmq.service_status_factory import ServiceStatusFactory
-from fluxmq.topicfactory import TopicFactory
+from fluxmq.status import Status
+from fluxmq.topic import Topic
 from fluxmq.transport import Transport
 from nats.aio.msg import Msg
 from nats.aio.subscription import Subscription
@@ -61,7 +61,19 @@ class Nats(Transport):
         await self.connection.close()
 
 
-class Topic(TopicFactory):
+class NatsTopic(Topic):
+    def node_state(self, node_id: str):
+        pass
+
+    def start(self, service_id: str):
+        pass
+
+    def stop(self, service_id: str):
+        pass
+
+    def node_state_request(self, service_id: str):
+        pass
+
     def request_configuration(self, service_id: str):
         return f"service/get_config"
 
@@ -84,7 +96,7 @@ class Topic(TopicFactory):
         pass
 
 
-class ServiceStatus(ServiceStatusFactory):
+class NatsStatus(Status):
     def up(self):
         return "up"
 
