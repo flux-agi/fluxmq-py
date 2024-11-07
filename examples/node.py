@@ -37,7 +37,7 @@ class WorkService(Service):
                                   output_topics=output_topics,
                                   input_topics=input_topics,
                                   service=self,
-                                  alias=alias))
+                                  node_id=alias))
 
         await self.start_nodes()
 

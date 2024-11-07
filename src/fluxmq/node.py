@@ -13,19 +13,19 @@ class Node:
     output_topics: Dict[str, str]
     input_topics: Dict[str, str]
     input_tasks: list[Task]
-    alias: str
+    node_id: str
 
     def __init__(self,
                  logger: Logger,
                  service: Service,
-                 alias: str,
+                 node_id: str,
                  output_topics: Dict[str, str],
                  input_topics: Dict[str, str]):
         self.logger = logger
         self.service = service
         self.output_topics = output_topics
         self.input_topics = input_topics
-        self.alias = alias
+        self.node_id = node_id
 
     async def start(self) -> None:
         try:
