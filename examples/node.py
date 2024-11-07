@@ -27,7 +27,7 @@ class WorkService(Service):
         config = json.loads(message.payload.encode())
 
         await self.stop_nodes()
-        await self.clear_nodes()
+        await self.destroy_nodes()
 
         for node_config_data in config['nodes']:
             output_topics = node_config_data['output_topics']

@@ -4,7 +4,7 @@ from logging import Logger, getLogger
 import asyncio
 import nats
 from fluxmq.message import Message
-from fluxmq.statusfactory import StatusFactory
+from fluxmq.service_status_factory import ServiceStatusFactory
 from fluxmq.topicfactory import TopicFactory
 from fluxmq.transport import Transport
 from nats.aio.msg import Msg
@@ -77,14 +77,14 @@ class Topic(TopicFactory):
     def configuration(self, service_id: str):
         return f"service.{service_id}.configuration"
 
-    def send_configuration(self, service_id: str):
+    def configuration_request(self, service_id: str):
         pass
 
-    def send_status(self, service_id: str):
+    def status_request(self, service_id: str):
         pass
 
 
-class Status(StatusFactory):
+class ServiceStatus(ServiceStatusFactory):
     def up(self):
         return "up"
 

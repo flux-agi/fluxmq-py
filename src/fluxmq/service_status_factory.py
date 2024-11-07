@@ -24,7 +24,7 @@ use like DStatus.READY | DStatus.STOPPED, DStatus.READY | DStatus.RUNNING
 """
 
 
-class StatusFactory(ABC):
+class ServiceStatusFactory(ABC):
     @abstractmethod
     def up(self):
         pass
@@ -41,10 +41,3 @@ class StatusFactory(ABC):
     def stopped(self):
         pass
 
-    @abstractmethod
-    def node_stopped(self, node_id: str):
-        pass
-
-    @abstractmethod
-    def node_started(self, node_id: str):
-        pass

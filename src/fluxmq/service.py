@@ -7,7 +7,7 @@ from asyncio.queues import Queue
 from signal import signal, SIGTERM
 
 from fluxmq.message import Message
-from fluxmq.statusfactory import StatusFactory
+from fluxmq.service_status_factory import ServiceStatusFactory
 from fluxmq.topicfactory import TopicFactory
 from fluxmq.transport import Transport
 from fluxmq.node import Node
@@ -16,7 +16,7 @@ from fluxmq.node import Node
 class Service:
     transport: Transport
     topic: TopicFactory
-    status: StatusFactory
+    status: ServiceStatusFactory
     id: str
     nodes: list[Node]
 
@@ -29,7 +29,7 @@ class Service:
 
     def attach(self,
                transport: Transport,
-               topic: TopicFactory, status: StatusFactory) -> None:
+               topic: TopicFactory, status: ServiceStatusFactory) -> None:
         self.transport = transport
         self.topic = topic
         self.status = status
@@ -46,7 +46,9 @@ class Service:
 
         return
 
-    async def clear_nodes(self) -> None:
+    async def destroy_nodes(self) -> None:
+        for node in self.nodes:
+            await node.destroy()
         self.nodes.clear()
 
     async def start_nodes(self) -> None:
@@ -59,66 +61,6 @@ class Service:
 
     def append_node(self, node: Node) -> None:
         self.nodes.append(node)
-
-        def callback_on_stop():
-            self.send_node_status(node.node_id, self.status.node_stopped(node.node_id))
-
-        def callback_on_start():
-            self.send_node_status(node.node_id, self.status.node_stopped(node.node_id))
-
-        node.status_callback_on_stop = callback_on_stop
-        node.status_callback_on_start = callback_on_start
-
-    async def __subscribe_configuration(self) -> None:
-        topic = self.topic.configuration(self.id)
-        queue: Queue = await self.subscribe(topic)
-
-        async def read_queue(queue: asyncio.queues.Queue[Message]):
-            while True:
-                message = await queue.get()
-                await self.on_configuration(message)
-
-        task = asyncio.create_task(read_queue(queue))
-        task.add_done_callback(lambda t: None)
-        return
-
-    async def __subscribe_control(self) -> None:
-        topic = self.topic.control(self.id)
-        queue: Queue = await self.subscribe(topic)
-
-        async def read_queue(queue: asyncio.queues.Queue[Message]):
-            while True:
-                message = await queue.get()
-                await self.on_control(message)
-
-        task = asyncio.create_task(read_queue(queue))
-        task.add_done_callback(lambda t: None)
-
-        return
-
-    async def __subscribe_time(self) -> None:
-        topic = self.topic.time()
-        queue: Queue = await self.subscribe(topic)
-
-        async def read_queue(queue: asyncio.queues.Queue[Message]):
-            while True:
-                message = await queue.get()
-                time = int.from_bytes(message.payload, byteorder='big')
-                await self.on_time(time)
-
-        task = asyncio.create_task(read_queue(queue))
-        task.add_done_callback(lambda t: None)
-
-        return
-
-    def __graceful_shutdown(self, signal_number, frame) -> None:
-        self.logger.debug("Shutting down gracefully %s, %s...", signal_number, frame)
-        self.stop_nodes()
-        self.clear_nodes()
-        self.send_status(self.status.down())
-        self.on_shutdown(signal_number, frame)
-        self.transport.close()
-        sys.exit(0)
 
     async def subscribe(self, topic: str) -> Queue:
         queue = await self.transport.subscribe(topic)
@@ -144,8 +86,8 @@ class Service:
         topic = self.topic.status(self.id)
         await self.transport.publish(topic, status)
 
-    async def send_node_status(self, node_id: str, status: str):
-        topic = self.topic.node_status(node_id)
+    async def send_node_state(self, node_id: str, status: str):
+        topic = self.topic.node_state(node_id)
         await self.transport.publish(topic, status)
 
     async def on_configuration(self, message: Message):
@@ -159,3 +101,52 @@ class Service:
 
     async def on_shutdown(self, signal_number, frame):
         pass
+
+    async def __subscribe_configuration(self) -> None:
+        topic = self.topic.configuration(self.id)
+        queue: Queue = await self.subscribe(topic)
+
+        async def read_queue(queue: asyncio.queues.Queue[Message]):
+            while True:
+                message = await queue.get()
+                await self.on_configuration(message)
+
+        task = asyncio.create_task(read_queue(queue))
+        task.add_done_callback(lambda t: None)
+        return
+
+    async def __subscribe_control(self) -> None:
+        topic = self.topic.control(self.id)
+        queue: Queue = await self.subscribe(topic)
+
+        async def read_queue(queue: asyncio.queues.Queue[Message]):
+            while True:
+                message = await queue.get()
+                await self.on_control(message)
+
+        task = asyncio.create_task(read_queue(queue))
+        task.add_done_callback(lambda t: None)
+        return
+
+    async def __subscribe_time(self) -> None:
+        topic = self.topic.time()
+        queue: Queue = await self.subscribe(topic)
+
+        async def read_queue(queue: asyncio.queues.Queue[Message]):
+            while True:
+                message = await queue.get()
+                time = int.from_bytes(message.payload, byteorder='big')
+                await self.on_time(time)
+
+        task = asyncio.create_task(read_queue(queue))
+        task.add_done_callback(lambda t: None)
+        return
+
+    def __graceful_shutdown(self, signal_number, frame) -> None:
+        self.logger.debug("Shutting down gracefully %s, %s...", signal_number, frame)
+        self.stop_nodes()
+        self.destroy_nodes()
+        self.send_status(self.status.down())
+        self.on_shutdown(signal_number, frame)
+        self.transport.close()
+        sys.exit(0)
