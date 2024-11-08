@@ -1,15 +1,19 @@
-from asyncio import Queue
-from logging import Logger, getLogger
-
 import asyncio
 import nats
-from fluxmq.message import Message
-from fluxmq.status import Status
-from fluxmq.topic import Topic
-from fluxmq.transport import Transport
+
+from asyncio import Queue
+from logging import Logger, getLogger
 from nats.aio.msg import Msg
 from nats.aio.subscription import Subscription
 from typing import Dict
+
+from fluxmq.message import Message
+from fluxmq.node import NodeFactory, Node
+from fluxmq.node_state import NodeState
+from fluxmq.service import Service
+from fluxmq.status import Status
+from fluxmq.topic import Topic
+from fluxmq.transport import Transport
 
 
 class Nats(Transport):
@@ -108,3 +112,19 @@ class NatsStatus(Status):
 
     def stopped(self):
         return "paused"
+
+
+class NatsNodeState(NodeState):
+
+    def stopped(self):
+        return "stopped"
+
+    def started(self):
+        return "started"
+
+
+class NatsNodeFactory(NodeFactory):
+    def create_node(self, service: Service) -> Node:
+        return Node(logger=service.logger,
+                    service=service,
+                    state_factory=NatsNodeState())

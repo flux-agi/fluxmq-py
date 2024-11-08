@@ -12,7 +12,7 @@ from fluxmq.message import Message
 from fluxmq.status import Status
 from fluxmq.topic import Topic
 from fluxmq.transport import Transport
-from fluxmq.node import Node
+from fluxmq.node import Node, NodeState
 
 
 class Service:
@@ -33,6 +33,14 @@ class Service:
                transport: Transport,
                topic: Topic,
                status: Status) -> None:
+        """
+        attaches low level implementation of main abstractions
+        :param transport:
+        :param topic:
+        :param status:
+        :return:
+        """
+
         self.transport = transport
         self.topic = topic
         self.status = status
@@ -134,20 +142,20 @@ class Service:
         asyncio.run(callback())
         sys.exit(0)
 
-    async def on_start(self, message: Message):
+    async def on_start(self, message: Message) -> None:
         pass
 
-    async def on_stop(self, message: Message):
+    async def on_stop(self, message: Message) -> None:
         pass
 
-    async def on_configuration(self, message: Message):
+    async def on_configuration(self, message: Message) -> None:
         pass
 
-    async def on_control(self, message: Message):
+    async def on_control(self, message: Message) -> None:
         pass
 
-    async def on_time(self, time: int):
+    async def on_time(self, time: int) -> None:
         pass
 
-    async def on_shutdown(self, signal_number, frame):
+    async def on_shutdown(self, signal_number, frame) -> None:
         pass

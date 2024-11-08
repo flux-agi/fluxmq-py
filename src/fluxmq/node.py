@@ -1,11 +1,20 @@
+from abc import ABC, abstractmethod
+
 import asyncio
 from logging import Logger
 from typing import Dict, Any, Callable
 from asyncio import Task
 
-from fluxmq.node_state import NodeState
 from fluxmq.service import Service
 from asyncio import Queue
+
+
+class NodeState:
+    def stopped(self):
+        return "stopped"
+
+    def started(self):
+        return "started"
 
 
 class Node:
@@ -17,23 +26,27 @@ class Node:
     node_id: str
     status_callback_on_stop: Callable[[], None]
     status_callback_on_start: Callable[[], None]
-    state_factory: NodeState
     state: str
 
     def __init__(self,
-                 logger: Logger,
                  service: Service,
-                 state_factory: NodeState,
                  node_id: str,
                  output_topics: Dict[str, str],
-                 input_topics: Dict[str, str]):
-        self.logger = logger
+                 input_topics: Dict[str, str],
+                 logger: Logger = None,
+                 state_factory: NodeState = NodeState()):
         self.service = service
-        self.state_factory = state_factory
         self.output_topics = output_topics
         self.input_topics = input_topics
         self.node_id = node_id
-        self.state = self.state_factory.stopped()
+
+        if logger is not None:
+            self.logger = logger
+        else:
+            self.logger = service.logger
+
+        self.state_factory = state_factory
+        asyncio.run(self.on_create())
 
     def set_state(self, state: str):
         self.state = state
@@ -81,6 +94,9 @@ class Node:
         await self.stop()
         await self.on_destroy()
 
+    async def on_create(self) -> None:
+        pass
+
     async def on_start(self) -> None:
         pass
 
@@ -103,5 +119,3 @@ class Node:
         self.logger.error(err)
         await self.on_error(err)
         await self.stop()
-
-

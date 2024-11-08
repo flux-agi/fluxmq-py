@@ -1,6 +1,9 @@
 from asyncio import Queue
 
 from fluxmq.message import Message
+from fluxmq.node import NodeFactory, Node
+from fluxmq.node_state import NodeState
+from fluxmq.service import Service
 from fluxmq.status import Status
 from fluxmq.topic import Topic
 from fluxmq.transport import Transport
@@ -65,20 +68,24 @@ class MQTTTopic(Topic):
 
 
 class MQTTStatus(Status):
-    def node_stopped(self, node_id: str):
-        pass
-
-    def node_started(self, node_id: str):
-        pass
-
     def up(self):
         return "up"
 
     def down(self):
         return "down"
 
+
+class MQTTNodeState(NodeState):
+
+    def stopped(self):
+        return "stopped"
+
     def started(self):
         return "started"
 
-    def stopped(self):
-        return "stoppped"
+
+class MQTTNodeFactory(NodeFactory):
+    def create_node(self, service: Service) -> Node:
+        return Node(logger=service.logger,
+                    service=service,
+                    state_factory=MQTTNodeState())
