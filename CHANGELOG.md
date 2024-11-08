@@ -1,3 +1,11 @@
+## 0.12.0 (2024-11-08)
+
+### Feat
+
+- service update
+- service update
+- service update
+
 ## 0.11.0 (2024-11-07)
 
 ### Feat
