@@ -1,4 +1,6 @@
+from asyncio import Task
 from logging import Logger, getLogger
+from typing import Coroutine, Any, Callable, Dict
 
 import asyncio
 import sys
@@ -18,7 +20,7 @@ class Service:
     topic: Topic
     status: Status
     id: str
-    nodes: list[Node]
+    nodes: list[Node] = []
 
     def __init__(self,
                  service_id=str,
@@ -29,7 +31,8 @@ class Service:
 
     def attach(self,
                transport: Transport,
-               topic: Topic, status: Status) -> None:
+               topic: Topic,
+               status: Status) -> None:
         self.transport = transport
         self.topic = topic
         self.status = status
@@ -38,26 +41,43 @@ class Service:
     async def run(self) -> None:
 
         await self.transport.connect()
-        await self.__subscribe_configuration()
-        await self.__subscribe_control()
-        await self.send_status(self.status.up())
+
+        await self.subscribe_handler(self.topic.configuration(self.id), self.on_configuration)
+        await self.subscribe_handler(self.topic.control(self.id), self.on_control)
+        await self.subscribe_handler(self.topic.start(self.id), self.on_start)
+        await self.subscribe_handler(self.topic.stop(self.id), self.on_stop)
+        await self.subscribe_handler(self.topic.time(), self.on_time)
 
         signal(SIGTERM, self.__graceful_shutdown)
 
+        await self.send_status(self.status.up())
+
         return
 
-    async def destroy_nodes(self) -> None:
-        for node in self.nodes:
-            await node.destroy()
-        self.nodes.clear()
+    async def destroy_node_all(self) -> None:
+        await self.destroy_node('*')
 
-    async def start_nodes(self) -> None:
-        for node in self.nodes:
-            await node.start()
+    async def start_node_all(self) -> None:
+        await self.start_node('*')
 
-    async def stop_nodes(self) -> None:
+    async def stop_node_all(self) -> None:
+        await self.stop_node('*')
+
+    async def destroy_node(self, node_id: str) -> None:
         for node in self.nodes:
-            await node.stop()
+            if node.node_id == node_id or node_id == '*':
+                await node.destroy()
+                self.nodes.remove(node)
+
+    async def start_node(self, node_id: str) -> None:
+        for node in self.nodes:
+            if node.node_id == node_id or node_id == '*':
+                await node.start()
+
+    async def stop_node(self, node_id: str) -> None:
+        for node in self.nodes:
+            if node.node_id == node_id or node_id == '*':
+                await node.stop()
 
     def append_node(self, node: Node) -> None:
         self.nodes.append(node)
@@ -65,6 +85,18 @@ class Service:
     async def subscribe(self, topic: str) -> Queue:
         queue = await self.transport.subscribe(topic)
         return queue
+
+    async def subscribe_handler(self, topic, handler: Callable[[Message], Coroutine[Any, Any, None]]) -> Task:
+        queue: Queue = await self.subscribe(topic)
+
+        async def read_queue(queue: asyncio.queues.Queue[Message]):
+            while True:
+                message = await queue.get()
+                await handler(message)
+
+        task = asyncio.create_task(read_queue(queue))
+        task.add_done_callback(lambda t: None)
+        return task
 
     async def unsubscribe(self, topic: str):
         await self.transport.unsubscribe(topic)
@@ -90,6 +122,24 @@ class Service:
         topic = self.topic.node_state(node_id)
         await self.transport.publish(topic, status)
 
+    def __graceful_shutdown(self, signal_number, frame) -> None:
+        self.logger.debug("Shutting down gracefully %s, %s...", signal_number, frame)
+
+        async def callback():
+            await self.destroy_node('*')
+            await self.send_status(self.status.down())
+            await self.on_shutdown(signal_number, frame)
+            await self.transport.close()
+
+        asyncio.run(callback())
+        sys.exit(0)
+
+    async def on_start(self, message: Message):
+        pass
+
+    async def on_stop(self, message: Message):
+        pass
+
     async def on_configuration(self, message: Message):
         pass
 
@@ -101,52 +151,3 @@ class Service:
 
     async def on_shutdown(self, signal_number, frame):
         pass
-
-    async def __subscribe_configuration(self) -> None:
-        topic = self.topic.configuration(self.id)
-        queue: Queue = await self.subscribe(topic)
-
-        async def read_queue(queue: asyncio.queues.Queue[Message]):
-            while True:
-                message = await queue.get()
-                await self.on_configuration(message)
-
-        task = asyncio.create_task(read_queue(queue))
-        task.add_done_callback(lambda t: None)
-        return
-
-    async def __subscribe_control(self) -> None:
-        topic = self.topic.control(self.id)
-        queue: Queue = await self.subscribe(topic)
-
-        async def read_queue(queue: asyncio.queues.Queue[Message]):
-            while True:
-                message = await queue.get()
-                await self.on_control(message)
-
-        task = asyncio.create_task(read_queue(queue))
-        task.add_done_callback(lambda t: None)
-        return
-
-    async def __subscribe_time(self) -> None:
-        topic = self.topic.time()
-        queue: Queue = await self.subscribe(topic)
-
-        async def read_queue(queue: asyncio.queues.Queue[Message]):
-            while True:
-                message = await queue.get()
-                time = int.from_bytes(message.payload, byteorder='big')
-                await self.on_time(time)
-
-        task = asyncio.create_task(read_queue(queue))
-        task.add_done_callback(lambda t: None)
-        return
-
-    def __graceful_shutdown(self, signal_number, frame) -> None:
-        self.logger.debug("Shutting down gracefully %s, %s...", signal_number, frame)
-        self.stop_nodes()
-        self.destroy_nodes()
-        self.send_status(self.status.down())
-        self.on_shutdown(signal_number, frame)
-        self.transport.close()
-        sys.exit(0)

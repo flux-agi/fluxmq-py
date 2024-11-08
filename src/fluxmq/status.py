@@ -26,7 +26,8 @@ use like DStatus.READY | DStatus.STOPPED, DStatus.READY | DStatus.RUNNING
 
 class Status(ABC):
     """
-    service status factory
+    service status
+    should have just two states: up and down
     """
 
     @abstractmethod
@@ -37,11 +38,11 @@ class Status(ABC):
     def down(self):
         pass
 
-    @abstractmethod
-    def started(self):
-        pass
-
-    @abstractmethod
-    def stopped(self):
-        pass
+    # @abstractmethod
+    # def started(self):
+    #     pass
+    #
+    # @abstractmethod
+    # def stopped(self):
+    #     pass
 
