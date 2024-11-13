@@ -1,6 +1,6 @@
 from asyncio import Task
 from logging import Logger, getLogger
-from typing import Coroutine, Any, Callable, Dict
+from typing import Coroutine, Any, Callable, Dict, TYPE_CHECKING
 
 import asyncio
 import sys
@@ -12,15 +12,16 @@ from fluxmq.message import Message
 from fluxmq.status import Status
 from fluxmq.topic import Topic
 from fluxmq.transport import Transport
-from fluxmq.node import Node, NodeState
 
+if TYPE_CHECKING:
+    from fluxmq.node import Node
 
 class Service:
     transport: Transport
     topic: Topic
     status: Status
     id: str
-    nodes: list[Node] = []
+    nodes: list['Node'] = []
 
     def __init__(self,
                  service_id=str,
@@ -87,7 +88,7 @@ class Service:
             if node.node_id == node_id or node_id == '*':
                 await node.stop()
 
-    def append_node(self, node: Node) -> None:
+    def append_node(self, node: 'Node') -> None:
         self.nodes.append(node)
 
     async def subscribe(self, topic: str) -> Queue:

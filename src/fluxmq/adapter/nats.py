@@ -9,7 +9,7 @@ from typing import Dict
 
 from fluxmq.message import Message
 from fluxmq.node import NodeFactory, Node
-from fluxmq.node_state import NodeState
+from fluxmq.node import NodeState
 from fluxmq.service import Service
 from fluxmq.status import Status
 from fluxmq.topic import Topic
