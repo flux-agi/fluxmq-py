@@ -2,7 +2,7 @@ from asyncio import Queue
 
 from fluxmq.message import Message
 from fluxmq.node import NodeFactory, Node
-from fluxmq.node_state import NodeState
+from fluxmq.node import NodeState
 from fluxmq.service import Service
 from fluxmq.status import Status
 from fluxmq.topic import Topic
@@ -65,6 +65,11 @@ class MQTTTopic(Topic):
 
     def configuration(self, service_id: str):
         return f"service/{service_id}/configuration"
+    
+    def error(self, message: str) -> None:
+        """Handle errors in the MQTTTopic"""
+        print(f"Error: {message}")
+        pass
 
 
 class MQTTStatus(Status):

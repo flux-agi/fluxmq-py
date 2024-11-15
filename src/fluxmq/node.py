@@ -2,12 +2,14 @@ from abc import ABC, abstractmethod
 
 import asyncio
 from logging import Logger
-from typing import Dict, Any, Callable
+from typing import Dict, Any, Callable, TYPE_CHECKING
 from asyncio import Task
-
-from fluxmq.service import Service
 from asyncio import Queue
 
+from fluxmq.service import Service
+
+if TYPE_CHECKING:
+    from fluxmq.service import Service
 
 class NodeState:
     def stopped(self):
@@ -16,10 +18,9 @@ class NodeState:
     def started(self):
         return "started"
 
-
 class Node:
     logger: Logger
-    service: Service
+    service: 'Service'
     output_topics: Dict[str, str]
     input_topics: Dict[str, str]
     input_tasks: list[Task]
@@ -29,7 +30,7 @@ class Node:
     state: str
 
     def __init__(self,
-                 service: Service,
+                 service: 'Service',
                  node_id: str,
                  output_topics: Dict[str, str],
                  input_topics: Dict[str, str],
@@ -119,3 +120,8 @@ class Node:
         self.logger.error(err)
         await self.on_error(err)
         await self.stop()
+
+class NodeFactory(ABC):
+    @abstractmethod
+    def create_node(self, service: 'Service') -> Node:
+        pass
