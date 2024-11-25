@@ -24,6 +24,7 @@ class Nats(Transport):
 
     def __init__(self, servers: list[str], logger=None):
         self.servers = servers
+        self.subscriptions = {}
         if logger is None:
             self.logger = getLogger()
         else:
@@ -34,7 +35,7 @@ class Nats(Transport):
         self.logger.debug(f"Connected to {self.servers}")
 
     async def publish(self, topic: str, payload: bytes):
-        await self.connection.publish(topic, payload)
+        await self.connection.publish(topic, payload.encode('utf-8'))
         self.logger.debug("Sent message", extra={"topic": topic, "payload": payload})
 
     async def subscribe(self, topic: str) -> Queue[Message]:
@@ -67,37 +68,40 @@ class Nats(Transport):
 
 class NatsTopic(Topic):
     def node_state(self, node_id: str):
-        pass
+        return f"service/{node_id}/get_common_state"
 
     def start(self, service_id: str):
-        pass
+        return f"service/{service_id}/start"
 
     def stop(self, service_id: str):
-        pass
+        return f"service/{service_id}/stop"
 
     def node_state_request(self, service_id: str):
-        pass
+        return f"service/{service_id}/node_state_request"
 
     def request_configuration(self, service_id: str):
-        return f"service/get_config"
+        return f"service/{service_id}/get_config"
 
     def time(self):
-        return "time"
+        return "service/tick"
 
     def control(self, service_id: str):
-        return f"service.{service_id}.control"
+        return f"service/{service_id}/control"
 
     def status(self, service_id: str):
-        return f"service.{service_id}.status"
+        return f"service/{service_id}/status"
 
     def configuration(self, service_id: str):
-        return f"service.{service_id}.configuration"
+        return f"service/{service_id}/set_config"
 
     def configuration_request(self, service_id: str):
-        pass
+        return f"service/{service_id}/config_request"
 
     def status_request(self, service_id: str):
-        pass
+        return f"service/{service_id}/request_status"
+
+    def error(self, service_id: str):
+        return f"service/{service_id}/error"
 
 
 class NatsStatus(Status):

@@ -4,7 +4,7 @@ import json
 from typing import Any
 from logging import getLogger
 
-from fluxmq.adapter.mqtt import MQTT, MQTTTopic, MQTTStatus
+from fluxmq.adapter.nats import Nats, NatsTopic, NatsStatus
 from fluxmq.service import Service
 from fluxmq.message import Message
 from fluxmq.node import Node
@@ -79,9 +79,9 @@ class RuntimeService(Service):
 async def main():
     service = RuntimeService(logger=getLogger("main"),
                              service_id="runtime")
-    service.attach(transport=MQTT(),
-                   status=MQTTStatus(),
-                   topic=MQTTTopic())
+    service.attach(transport=Nats(['nats://127.0.0.1:4222']),
+                   status=NatsStatus(),
+                   topic=NatsTopic())
     await service.run()
 
 

@@ -48,7 +48,6 @@ class Service:
         return
 
     async def run(self) -> None:
-
         await self.transport.connect()
 
         await self.subscribe_handler(self.topic.configuration(self.id), self.on_configuration)

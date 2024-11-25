@@ -89,7 +89,7 @@ class Topic(ABC):
         pass
 
     @abstractmethod
-    def error(self):
+    def error(self, service_id: str):
         """
         pub-sub topic to listen to, or to publish about the error
         """
