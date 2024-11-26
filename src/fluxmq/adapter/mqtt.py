@@ -33,7 +33,7 @@ class MQTT(Transport):
 
 
 class MQTTTopic(Topic):
-    def node_state(self, node_id: str):
+    def set_node_state(self, node_id: str):
         pass
 
     def start(self, service_id: str):

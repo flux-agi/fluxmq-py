@@ -71,7 +71,7 @@ class RuntimeService(Service):
         self.logger.debug(f"Shutting down service.")
         pass
 
-    async def on_time(self, time: int):
+    async def on_tick(self, time: int):
         self.logger.debug(f"System coordinated time: {time}")
         pass
 

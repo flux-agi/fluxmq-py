@@ -67,7 +67,10 @@ class Nats(Transport):
 
 
 class NatsTopic(Topic):
-    def node_state(self, node_id: str):
+    def set_node_state(self, node_id: str):
+        return f"service/{node_id}/set_common_state"
+
+    def get_node_state(self, node_id, str):
         return f"service/{node_id}/get_common_state"
 
     def start(self, service_id: str):
@@ -81,6 +84,9 @@ class NatsTopic(Topic):
 
     def request_configuration(self, service_id: str):
         return f"service/{service_id}/get_config"
+
+    def restart_node(self, service_id: str):
+        return f"service/{service_id}/restart"
 
     def time(self):
         return "service/tick"
@@ -105,17 +111,20 @@ class NatsTopic(Topic):
 
 
 class NatsStatus(Status):
-    def up(self):
-        return "up"
+    def connected(self):
+        return "CONNECTED"
 
-    def down(self):
-        return "down"
+    def ready(self):
+        return "READY"
 
-    def started(self):
-        return "ready"
+    def active(self):
+        return "ACTIVE"
 
-    def stopped(self):
-        return "paused"
+    def paused(self):
+        return "PAUSED"
+
+    def error(self):
+        return "ERROR"
 
 
 class NatsNodeState(NodeState):

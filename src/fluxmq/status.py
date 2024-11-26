@@ -26,23 +26,25 @@ use like DStatus.READY | DStatus.STOPPED, DStatus.READY | DStatus.RUNNING
 
 class Status(ABC):
     """
-    service status
-    should have just two states: up and down
+    service statuses: CONNECTED, READY, ACTIVE, PAUSED, ERROR
     """
 
     @abstractmethod
-    def up(self):
+    def connected(self):
         pass
 
     @abstractmethod
-    def down(self):
+    def ready(self):
         pass
 
-    # @abstractmethod
-    # def started(self):
-    #     pass
-    #
-    # @abstractmethod
-    # def stopped(self):
-    #     pass
+    @abstractmethod
+    def active(self):
+        pass
 
+    @abstractmethod
+    def paused(self):
+        pass
+
+    @abstractmethod
+    def error(self):
+        pass

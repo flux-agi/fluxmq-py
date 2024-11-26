@@ -5,5 +5,3 @@ class Message:
     def __init__(self, reply, payload):
         self.reply = reply
         self.payload = payload
-
-

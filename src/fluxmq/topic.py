@@ -15,10 +15,24 @@ class Topic(ABC):
         pass
 
     @abstractmethod
-    def node_state(self, node_id: str):
+    def set_node_state(self, node_id: str):
         """
-        pub topic to be published by node/service contains node's state
+        pub topic to set node's state
         :param node_id:
+        """
+        pass
+
+    @abstractmethod
+    def get_node_state(self, node_id: str):
+        """
+        sub topic to get node's state
+        :param node_id:
+        """
+        pass
+
+    def restart_node(self, node_id: str):
+        """
+        sub topic for restart command for node
         """
         pass
 
