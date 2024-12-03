@@ -48,18 +48,20 @@ class Service:
         return
 
     async def run(self) -> None:
-
         await self.transport.connect()
 
         await self.subscribe_handler(self.topic.configuration(self.id), self.on_configuration)
         await self.subscribe_handler(self.topic.control(self.id), self.on_control)
         await self.subscribe_handler(self.topic.start(self.id), self.on_start)
         await self.subscribe_handler(self.topic.stop(self.id), self.on_stop)
-        await self.subscribe_handler(self.topic.time(), self.on_time)
+        await self.subscribe_handler(self.topic.error(self.id), self.on_error)
+        await self.subscribe_handler(self.topic.status(self.id), self.on_ready)
+        await self.subscribe_handler(self.topic.restart_node(self.id), self.on_restart)
 
         signal(SIGTERM, self.__graceful_shutdown)
 
-        await self.send_status(self.status.up())
+        await self.send_status(self.status.connected())
+        await self.on_connected(self.id)
 
         return
 
@@ -128,7 +130,7 @@ class Service:
         await self.transport.publish(topic, status)
 
     async def send_node_state(self, node_id: str, status: str):
-        topic = self.topic.node_state(node_id)
+        topic = self.topic.set_node_state(node_id)
         await self.transport.publish(topic, status)
 
     def __graceful_shutdown(self, signal_number, frame) -> None:
@@ -136,17 +138,26 @@ class Service:
 
         async def callback():
             await self.destroy_node('*')
-            await self.send_status(self.status.down())
+            await self.send_status(self.status.paused())
             await self.on_shutdown(signal_number, frame)
             await self.transport.close()
 
         asyncio.run(callback())
         sys.exit(0)
 
+    async def on_connected(self, message: Message) -> None:
+        pass
+
+    async def on_ready(self, message: Message) -> None:
+        pass
+
     async def on_start(self, message: Message) -> None:
         pass
 
     async def on_stop(self, message: Message) -> None:
+        pass
+
+    async def on_restart(self, message: Message) -> None:
         pass
 
     async def on_configuration(self, message: Message) -> None:
@@ -155,8 +166,11 @@ class Service:
     async def on_control(self, message: Message) -> None:
         pass
 
-    async def on_time(self, time: int) -> None:
+    async def on_tick(self, time: int) -> None:
         pass
 
     async def on_shutdown(self, signal_number, frame) -> None:
+        pass
+
+    async def on_error (self, message: Message) -> None:
         pass

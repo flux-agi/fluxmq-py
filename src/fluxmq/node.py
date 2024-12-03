@@ -114,7 +114,7 @@ class Node:
         pass
 
     async def on_state_changed(self) -> None:
-        await self.service.publish(self.service.topic.node_state(self.node_id), self.state)
+        await self.service.publish(self.service.topic.set_node_state(self.node_id), self.state)
 
     async def __on_error(self, err: Exception) -> None:
         self.logger.error(err)
