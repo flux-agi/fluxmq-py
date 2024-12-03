@@ -1,3 +1,10 @@
+## 0.14.0 (2024-12-03)
+
+### Feat
+
+- update NATS topics
+- update statuses and handlers
+
 ## 0.12.0 (2024-11-08)
 
 ### Feat
