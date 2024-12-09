@@ -35,7 +35,9 @@ class Nats(Transport):
         self.logger.debug(f"Connected to {self.servers}")
 
     async def publish(self, topic: str, payload: bytes):
-        await self.connection.publish(topic, payload.encode('utf-8'))
+        if not isinstance(payload, bytes):
+            payload = payload.encode('utf-8')
+        await self.connection.publish(topic, payload)
         self.logger.debug("Sent message", extra={"topic": topic, "payload": payload})
 
     async def subscribe(self, topic: str) -> Queue[Message]:
