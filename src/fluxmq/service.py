@@ -114,7 +114,7 @@ class Service:
         return
 
     async def publish(self, topic: str, message):
-        await self.publish(topic, message)
+        await self.transport.publish(topic, message)
         return
 
     async def request(self, topic: str, payload):
