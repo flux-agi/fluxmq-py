@@ -1,6 +1,5 @@
 argcomplete==3.5.1
 astunparse==1.6.3
-asyncio==3.4.3
 colorama==0.4.6
 commitizen==3.30.0
 decli==0.6.2
