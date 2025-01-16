@@ -24,7 +24,7 @@ class Service:
     nodes: list['Node'] = []
 
     def __init__(self,
-                 service_id=str,
+                 service_id: str = "unnamed",
                  logger: Logger = None):
         self.id = service_id
         if logger is None:
