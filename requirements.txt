@@ -3,7 +3,6 @@ astunparse==1.6.3
 asyncio==3.4.3
 colorama==0.4.6
 commitizen==3.30.0
-dataclasses==0.6
 decli==0.6.2
 flatbuffers==24.3.25
 gast==0.6.0
