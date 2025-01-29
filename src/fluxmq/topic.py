@@ -44,6 +44,14 @@ class Topic(ABC):
         :param service_id:
         """
         pass
+    
+    @abstractmethod
+    def settings(self, service_id: str):
+        """
+        sub topic to listen by service and get config of service.
+        :param service_id:
+        """
+        pass
 
     @abstractmethod
     def control(self, service_id: str):

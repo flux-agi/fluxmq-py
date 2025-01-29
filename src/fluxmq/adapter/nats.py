@@ -101,6 +101,9 @@ class NatsTopic(Topic):
 
     def configuration(self, service_id: str):
         return f"service/{service_id}/set_config"
+    
+    def settings(self, service_id: str):
+        return f"service/{service_id}/set/settings"
 
     def configuration_request(self, service_id: str):
         return f"service/{service_id}/config_request"
