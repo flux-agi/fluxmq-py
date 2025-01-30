@@ -97,13 +97,10 @@ class SyncNats(SyncTransport):
         future = asyncio.run_coroutine_threadsafe(self.nc.connect(servers=self.servers), self.loop)
         future.result()
         self.connected = True
+        self.logger.debug(f"Connected to {self.servers}")
 
     def _run_event_loop(self):
         self.loop.run_forever()
-
-    def connect(self):
-        self.connection = nats.connect(servers=self.servers)
-        self.logger.debug(f"Connected to {self.servers}")
 
     def publish(self, topic: str, payload: bytes):
         if not self.connected:

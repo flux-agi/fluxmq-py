@@ -58,8 +58,6 @@ class Service:
         await self.subscribe_handler(self.topic.status(self.id), self.on_ready)
         await self.subscribe_handler(self.topic.restart_node(self.id), self.on_restart)
 
-        signal(SIGTERM, self.__graceful_shutdown)
-
         await self.send_status(self.status.connected())
         await self.on_connected(self.id)
 
