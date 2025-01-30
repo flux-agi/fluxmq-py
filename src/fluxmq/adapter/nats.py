@@ -1,8 +1,10 @@
 import asyncio
+import threading
 import nats
 
 from asyncio import Queue
 from logging import Logger, getLogger
+from nats.aio.client import Client as NATS
 from nats.aio.msg import Msg
 from nats.aio.subscription import Subscription
 from typing import Dict
@@ -13,7 +15,7 @@ from fluxmq.node import NodeState
 from fluxmq.service import Service
 from fluxmq.status import Status
 from fluxmq.topic import Topic
-from fluxmq.transport import Transport
+from fluxmq.transport import Transport, SyncTransport
 
 
 class Nats(Transport):
@@ -67,6 +69,87 @@ class Nats(Transport):
     async def close(self) -> None:
         await self.connection.close()
 
+class SyncNats(SyncTransport):
+    connection = None
+    logger: Logger
+    servers: list[str]
+    subscriptions: Dict[str, Subscription]
+
+    def __init__(self, servers: list[str], logger=None):
+        self.servers = servers
+        self.subscriptions = {}
+        self.servers = servers
+        self.nc = NATS()
+        self.loop = None
+        self.thread = None
+        self.connected = False
+
+        if logger is None:
+            self.logger = getLogger()
+        else:
+            self.logger = logger
+
+    def connect(self):
+        self.loop = asyncio.get_event_loop()
+        self.thread = threading.Thread(target=self._run_event_loop, daemon=True)
+        self.thread.start()
+
+        future = asyncio.run_coroutine_threadsafe(self.nc.connect(servers=self.servers), self.loop)
+        future.result()
+        self.connected = True
+
+    def _run_event_loop(self):
+        self.loop.run_forever()
+
+    def connect(self):
+        self.connection = nats.connect(servers=self.servers)
+        self.logger.debug(f"Connected to {self.servers}")
+
+    def publish(self, topic: str, payload: bytes):
+        if not self.connected:
+            raise RuntimeError("Not connected to NATS")
+        future = asyncio.run_coroutine_threadsafe(self.nc.publish(topic, payload), self.loop)
+        future.result()  # Wait for the publish to complete
+        self.logger.debug("Sent message", extra={"topic": topic, "payload": payload})
+
+    def subscribe(self, topic: str) -> Queue:
+        if not self.connected:
+            raise RuntimeError("Not connected to NATS")
+
+        queue = Queue()
+
+        async def message_handler(msg):
+            queue.put(msg)
+
+        future = asyncio.run_coroutine_threadsafe(
+            self.nc.subscribe(topic, cb=message_handler), self.loop
+        )
+        future.result()  # Wait for the subscription to complete
+        return queue
+
+    def unsubscribe(self, topic: str):
+        if not self.connected:
+            raise RuntimeError("Not connected to NATS")
+        future = asyncio.run_coroutine_threadsafe(self.nc.unsubscribe(topic), self.loop)
+        future.result()  # Wait for the unsubscribe to complete
+
+    def close(self):
+        if not self.connected:
+            raise RuntimeError("Not connected to NATS")
+        future = asyncio.run_coroutine_threadsafe(self.nc.close(), self.loop)
+        future.result()  # Wait for the close to complete
+        self.connected = False
+
+    def request(self, topic: str, payload: bytes):
+        pass  # Implement synchronous request logic if needed
+
+    def respond(self, message: Message, response: bytes):
+        if not self.connected:
+            raise RuntimeError("Not connected to NATS")
+        
+        if message.reply is not None:
+            future = asyncio.run_coroutine_threadsafe(self.nc.publish(message.reply, response), self.loop)
+            future.result()  # Wait for the publish to complete
 
 class NatsTopic(Topic):
     def set_node_state(self, node_id: str):
