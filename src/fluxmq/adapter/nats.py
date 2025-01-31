@@ -110,6 +110,7 @@ class SyncNats(SyncTransport):
         self.logger.debug("Sent message", extra={"topic": topic, "payload": payload})
 
     def subscribe(self, topic: str) -> Queue:
+        print("subscribe to: ", topic)
         if not self.connected:
             raise RuntimeError("Not connected to NATS")
 
