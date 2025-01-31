@@ -51,8 +51,7 @@ class Nats(Transport):
 
         subscription = await self.connection.subscribe(topic, cb=message_handler)
         self.subscriptions[topic] = subscription
-        self.logger.debug(f"Subscribed to topic: {topic}")
-        return queue
+        self.logger.info(f"Subscribed to topic: {topic}")
 
     async def unsubscribe(self, topic: str):
         subscription = self.subscriptions[topic]
