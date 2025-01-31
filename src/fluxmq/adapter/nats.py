@@ -105,9 +105,8 @@ class SyncNats(SyncTransport):
     def publish(self, topic: str, payload: bytes):
         if not self.connected:
             raise RuntimeError("Not connected to NATS")
-        
-        print("topic: ", topic)
-        print("payload: ", payload)
+        if not isinstance(payload, bytes):
+            payload = payload.encode('utf-8')
         future = asyncio.run_coroutine_threadsafe(self.nc.publish(topic, payload), self.loop)
         future.result()  # Wait for the publish to complete
         self.logger.debug("Sent message", extra={"topic": topic, "payload": payload})
