@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from asyncio.queues import Queue
+from typing import Callable
 
 from fluxmq.message import Message
 
@@ -18,7 +19,7 @@ class Transport(ABC):
         pass
 
     @abstractmethod
-    async def subscribe(self, topic: str) -> Queue[Message]:
+    async def subscribe(self, topic: str, handler: Callable[[Message], None]):
         pass
 
     @abstractmethod
