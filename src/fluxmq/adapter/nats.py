@@ -116,7 +116,7 @@ class SyncNats(SyncTransport):
 
         queue = Queue()
 
-        async def message_handler(msg):
+        def message_handler(msg):
             queue.put(msg)
 
         future = asyncio.run_coroutine_threadsafe(
