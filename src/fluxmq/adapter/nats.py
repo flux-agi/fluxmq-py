@@ -7,7 +7,7 @@ from logging import Logger, getLogger
 from nats.aio.client import Client as NATS
 from nats.aio.msg import Msg
 from nats.aio.subscription import Subscription
-from typing import Dict
+from typing import Callable, Dict
 
 from fluxmq.message import Message
 from fluxmq.node import NodeFactory, Node
@@ -109,21 +109,19 @@ class SyncNats(SyncTransport):
         future.result()  # Wait for the publish to complete
         self.logger.debug("Sent message", extra={"topic": topic, "payload": payload})
 
-    def subscribe(self, topic: str) -> Queue:
+    def subscribe(self, topic: str, callback: Callable[[Message], None]):
         print("subscribe to: ", topic)
         if not self.connected:
             raise RuntimeError("Not connected to NATS")
 
-        queue = Queue()
-
-        def message_handler(msg):
-            queue.put(msg)
+        async def message_handler(msg: Msg):
+            message = Message(reply=msg.reply, payload=msg.data)
+            callback(message)
 
         future = asyncio.run_coroutine_threadsafe(
             self.nc.subscribe(topic, cb=message_handler), self.loop
         )
-        future.result()  # Wait for the subscription to complete
-        return queue
+        future.result()
 
     def unsubscribe(self, topic: str):
         if not self.connected:
