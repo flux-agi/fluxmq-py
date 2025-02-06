@@ -119,10 +119,14 @@ class SyncNats(SyncTransport):
             message = Message(reply=msg.reply, payload=msg.data)
             callback(message)
 
-        future = asyncio.run_coroutine_threadsafe(
-            self.nc.subscribe(topic, cb=message_handler), self.loop
-        )
-        future.result()
+        if callback is not None:
+            future = asyncio.run_coroutine_threadsafe(
+                self.nc.subscribe(topic, cb=message_handler), self.loop
+            )
+            future.result()
+            return
+        
+        return self.nc.subscribe(topic)
 
     def unsubscribe(self, topic: str):
         if not self.connected:
