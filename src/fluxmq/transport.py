@@ -55,7 +55,7 @@ class SyncTransport(ABC):
         pass
 
     @abstractmethod
-    def subscribe(self, topic: str) -> Queue[Message]:
+    def subscribe(self, topic: str):
         pass
 
     @abstractmethod
