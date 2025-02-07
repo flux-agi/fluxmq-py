@@ -117,7 +117,7 @@ class SyncNats(SyncTransport):
 
         async def message_handler(msg: Msg):
             message = Message(reply=msg.reply, payload=msg.data)
-            
+
             if callback is None:
                 return
             
@@ -127,10 +127,9 @@ class SyncNats(SyncTransport):
                 callback(message)
 
         if callback is not None:
-            future = asyncio.run_coroutine_threadsafe(
+            asyncio.run_coroutine_threadsafe(
                 self.nc.subscribe(topic, cb=message_handler), self.loop
             )
-            future.result()
             return
         
         return
