@@ -115,7 +115,7 @@ class SyncNats(SyncTransport):
         if not self.connected:
             raise RuntimeError("Not connected to NATS")
 
-        async def message_handler(msg: Msg):
+        def message_handler(msg: Msg):
             message = Message(reply=msg.reply, payload=msg.data)
             callback(message)
 
