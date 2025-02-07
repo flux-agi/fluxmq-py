@@ -117,7 +117,14 @@ class SyncNats(SyncTransport):
 
         async def message_handler(msg: Msg):
             message = Message(reply=msg.reply, payload=msg.data)
-            await callback(message)
+            
+            if callback is None:
+                return
+            
+            if asyncio.iscoroutinefunction(callback):
+                await callback(message)
+            else:
+                callback(message)
 
         if callback is not None:
             future = asyncio.run_coroutine_threadsafe(
