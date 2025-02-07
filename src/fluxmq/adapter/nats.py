@@ -117,7 +117,7 @@ class SyncNats(SyncTransport):
 
         async def message_handler(msg: Msg):
             message = Message(reply=msg.reply, payload=msg.data)
-            callback(message)
+            await callback(message)
 
         if callback is not None:
             future = asyncio.run_coroutine_threadsafe(
@@ -126,7 +126,7 @@ class SyncNats(SyncTransport):
             future.result()
             return
         
-        return self.nc.subscribe(topic)
+        return
 
     def unsubscribe(self, topic: str):
         if not self.connected:
