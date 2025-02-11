@@ -203,6 +203,9 @@ class NatsTopic(Topic):
 
 
 class NatsStatus(Status):
+    def starting(self):
+        return "STARTING"
+    
     def connected(self):
         return "CONNECTED"
 
