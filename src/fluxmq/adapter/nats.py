@@ -159,50 +159,47 @@ class SyncNats(SyncTransport):
             future.result()  # Wait for the publish to complete
 
 class NatsTopic(Topic):
-    def set_node_state(self, node_id: str):
-        return f"service/{node_id}/set_common_state"
+    def set_service_state(self, service_id: str):
+        return f"service.{service_id}.set_common_state"
 
-    def get_node_state(self, node_id, str):
-        return f"service/{node_id}/get_common_state"
+    def get_service_state(self, service_id, str):
+        return f"service.{service_id}.get_common_state"
 
     def start(self, service_id: str):
-        return f"service/{service_id}/start"
+        return f"service.{service_id}.start"
 
     def stop(self, service_id: str):
-        return f"service/{service_id}/stop"
-
-    def node_state_request(self, service_id: str):
-        return f"service/{service_id}/node_state_request"
-
-    def request_configuration(self, service_id: str):
-        return f"service/{service_id}/get_config"
-
+        return f"service.{service_id}.stop"
+    
     def restart_node(self, service_id: str):
-        return f"service/{service_id}/restart"
+        return f"service.{service_id}.restart"
+
+    def node_state_request(self, node_id: str):
+        return f"node.{node_id}.state_request"
+
+    def dev_mode(self, service_id: str):
+         return f"service.development_mode.{service_id}"
 
     def time(self):
-        return "service/tick"
-
-    def control(self, service_id: str):
-        return f"service/{service_id}/control"
+        return "service.tick"
 
     def status(self, service_id: str):
-        return f"service/{service_id}/status"
+        return f"service.{service_id}.status"
 
     def configuration(self, service_id: str):
-        return f"service/{service_id}/set_config"
+        return f"service.{service_id}.set_config"
     
-    def settings(self, service_id: str):
-        return f"service/{service_id}/set/settings"
-
     def configuration_request(self, service_id: str):
-        return f"service/{service_id}/config_request"
+        return f"service.{service_id}.get_config"
+    
+    def settings(self, node_id: str):
+        return f"node.{node_id}.set_settings"
 
     def status_request(self, service_id: str):
-        return f"service/{service_id}/request_status"
+        return f"service.{service_id}.request_status"
 
     def error(self, service_id: str):
-        return f"service/{service_id}/error"
+        return f"service.{service_id}.error"
 
 
 class NatsStatus(Status):
