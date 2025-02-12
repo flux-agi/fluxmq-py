@@ -51,7 +51,6 @@ class Service:
         await self.transport.connect()
 
         await self.subscribe_handler(self.topic.configuration(self.id), self.on_configuration)
-        await self.subscribe_handler(self.topic.control(self.id), self.on_control)
         await self.subscribe_handler(self.topic.start(self.id), self.on_start)
         await self.subscribe_handler(self.topic.stop(self.id), self.on_stop)
         await self.subscribe_handler(self.topic.error(self.id), self.on_error)
@@ -159,9 +158,6 @@ class Service:
         pass
 
     async def on_configuration(self, message: Message) -> None:
-        pass
-
-    async def on_control(self, message: Message) -> None:
         pass
 
     async def on_tick(self, time: int) -> None:

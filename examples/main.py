@@ -61,12 +61,6 @@ class RuntimeService(Service):
     async def on_stop(self, message: Message) -> None:
         await self.stop_node_all()
 
-    async def on_control(self, message: Message):
-        data = json.loads(message.payload.encode())
-        if data['command'] == "set":
-            self.logger.debug(f"Executing set command.")
-        return
-
     async def on_shutdown(self, signal_number, frame):
         self.logger.debug(f"Shutting down service.")
         pass

@@ -54,14 +54,6 @@ class Topic(ABC):
         pass
 
     @abstractmethod
-    def control(self, service_id: str):
-        """
-        sub topic to listen to by service, generic control command to be sent to service
-        :param service_id:
-        """
-        pass
-
-    @abstractmethod
     def start(self, service_id: str):
         """
         sub topic to listen to by service, service should start node|nodes upon message in this topic

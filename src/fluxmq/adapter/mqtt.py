@@ -57,9 +57,6 @@ class MQTTTopic(Topic):
     def time(self):
         return f"time"
 
-    def control(self, service_id: str):
-        return f"service/{service_id}/control"
-
     def status(self, service_id: str):
         return f"service/{service_id}/status"
 
