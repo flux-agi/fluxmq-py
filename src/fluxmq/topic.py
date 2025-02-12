@@ -15,7 +15,7 @@ class Topic(ABC):
         pass
 
     @abstractmethod
-    def set_node_state(self, node_id: str):
+    def set_service_state(self, service_id: str):
         """
         pub topic to set node's state
         :param node_id:
@@ -23,7 +23,7 @@ class Topic(ABC):
         pass
 
     @abstractmethod
-    def get_node_state(self, node_id: str):
+    def get_service_state(self, service_id: str):
         """
         sub topic to get node's state
         :param node_id:
@@ -34,6 +34,10 @@ class Topic(ABC):
         """
         sub topic for restart command for node
         """
+        pass
+
+    @abstractmethod
+    def dev_mode(self, service_id: str):
         pass
 
     @abstractmethod
