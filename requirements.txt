@@ -13,7 +13,6 @@ grpcio==1.67.0
 h5py==3.12.1
 idna==3.10
 importlib_metadata==8.5.0
-Jinja2==3.1.4
 keras==3.6.0
 libclang==18.1.1
 Markdown==3.7
