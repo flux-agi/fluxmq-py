@@ -50,7 +50,7 @@ class Topic(ABC):
         pass
     
     @abstractmethod
-    def on_node_settings(self, node_id: str):
+    def node_settings(self, node_id: str):
         """
         sub topic to listen by service and get config of service.
         :param service_id:
@@ -58,7 +58,7 @@ class Topic(ABC):
         pass
 
     @abstractmethod
-    def on_service_settings(self, service_id: str):
+    def service_settings(self, service_id: str):
         """
         sub topic to listen by service and get config of service.
         :param service_id:
