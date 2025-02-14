@@ -197,7 +197,7 @@ class NatsTopic(Topic):
         return f"node.{node_id}.set_settings"
     
     def service_settings(self, service_id: str):
-        return f"node.{service_id}.set_settings"
+        return f"service.{service_id}.set_settings"
 
     def status_request(self, service_id: str):
         return f"service.{service_id}.request_status"
