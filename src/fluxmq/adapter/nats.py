@@ -21,7 +21,7 @@ class Nats(Transport):
     servers: List[str]
     subscriptions: Dict[str, Subscription]
 
-    def __init__(self, servers: list[str], logger=None):
+    def __init__(self, servers: List[str], logger=None):
         self.servers = servers
         self.subscriptions = {}
         if logger is None:
@@ -69,10 +69,10 @@ class Nats(Transport):
 class SyncNats(SyncTransport):
     connection = None
     logger: Logger
-    servers: list[str]
+    servers: List[str]
     subscriptions: Dict[str, Subscription]
 
-    def __init__(self, servers: list[str], logger=None):
+    def __init__(self, servers: List[str], logger=None):
         self.servers = servers
         self.subscriptions = {}
         self.servers = servers
