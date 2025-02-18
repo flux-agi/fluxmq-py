@@ -7,7 +7,7 @@ from logging import Logger, getLogger
 from nats.aio.client import Client as NATS
 from nats.aio.msg import Msg
 from nats.aio.subscription import Subscription
-from typing import Callable, Dict
+from typing import Callable, Dict, List
 
 from fluxmq.message import Message
 from fluxmq.status import Status
@@ -18,7 +18,7 @@ from fluxmq.transport import Transport, SyncTransport
 class Nats(Transport):
     connection = None
     logger: Logger
-    servers: list[str]
+    servers: List[str]
     subscriptions: Dict[str, Subscription]
 
     def __init__(self, servers: list[str], logger=None):
