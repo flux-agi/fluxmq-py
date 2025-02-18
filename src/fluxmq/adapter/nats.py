@@ -2,17 +2,19 @@ import asyncio
 import threading
 import nats
 
+from asyncio import Queue
 from logging import Logger, getLogger
 from nats.aio.client import Client as NATS
 from nats.aio.msg import Msg
 from nats.aio.subscription import Subscription
-from typing import Callable, Dict, List, Queue
+from typing import Callable, Dict, List, TypeVar
 
 from fluxmq.message import Message
 from fluxmq.status import Status
 from fluxmq.topic import Topic
 from fluxmq.transport import Transport, SyncTransport
 
+Message = TypeVar('Message')
 
 class Nats(Transport):
     connection = None
