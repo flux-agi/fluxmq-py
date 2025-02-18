@@ -10,7 +10,7 @@ flatbuffers==24.3.25
 gast==0.6.0
 google-pasta==0.2.0
 grpcio==1.67.0
-h5py==3.12.1
+h5py==3.11.0
 idna==3.10
 importlib_metadata==8.5.0
 keras==3.6.0
