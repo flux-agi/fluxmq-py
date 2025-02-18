@@ -47,7 +47,7 @@ class Nats(Transport):
         queue = asyncio.Queue()
 
         async def message_handler(raw: Msg):
-            message = MessageType(reply=raw.reply, payload=raw.data)
+            message = Message(reply=raw.reply, payload=raw.data)
             await queue.put(message)
 
         subscription = await self.connection.subscribe(topic, cb=message_handler)
@@ -118,7 +118,7 @@ class SyncNats(SyncTransport):
             raise RuntimeError("Not connected to NATS")
 
         async def message_handler(msg: Msg):
-            message = MessageType(reply=msg.reply, payload=msg.data)
+            message = Message(reply=msg.reply, payload=msg.data)
 
             if callback is None:
                 return
