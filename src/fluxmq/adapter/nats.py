@@ -7,7 +7,7 @@ from logging import Logger, getLogger
 from nats.aio.client import Client as NATS
 from nats.aio.msg import Msg
 from nats.aio.subscription import Subscription
-from typing import Callable, Dict, List, TypeVar
+from typing import Callable, Dict, List, TypeVar, Generic
 
 from fluxmq.message import Message
 from fluxmq.status import Status
@@ -15,6 +15,9 @@ from fluxmq.topic import Topic
 from fluxmq.transport import Transport, SyncTransport
 
 Message = TypeVar('Message')
+
+class TypedQueue(Queue, Generic[Message]):
+    pass
 
 class Nats(Transport):
     connection = None
@@ -40,7 +43,7 @@ class Nats(Transport):
         await self.connection.publish(topic, payload)
         self.logger.debug("Sent message", extra={"topic": topic, "payload": payload})
 
-    async def subscribe(self, topic: str) -> Queue[Message]:
+    async def subscribe(self, topic: str) -> TypedQueue[Message]:
         queue = asyncio.Queue()
 
         async def message_handler(raw: Msg):
