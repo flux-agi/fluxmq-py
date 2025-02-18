@@ -119,6 +119,10 @@ class Topic(ABC):
         pass
 
     @abstractmethod
+    def node_status(self, node_id: str):
+        pass
+
+    @abstractmethod
     def error(self, service_id: str):
         """
         pub-sub topic to listen to, or to publish about the error

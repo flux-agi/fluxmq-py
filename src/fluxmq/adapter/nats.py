@@ -175,6 +175,9 @@ class NatsTopic(Topic):
     def restart_node(self, service_id: str):
         return f"service.{service_id}.restart"
 
+    def node_status(self, node_id: str):
+        return f"node.{node_id}.status"
+    
     def node_state_request(self, node_id: str):
         return f"node.{node_id}.state_request"
 
