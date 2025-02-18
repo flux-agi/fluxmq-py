@@ -14,9 +14,9 @@ from fluxmq.status import Status
 from fluxmq.topic import Topic
 from fluxmq.transport import Transport, SyncTransport
 
-Message = TypeVar('Message')
+MessageType = TypeVar('Message', bound=Message)
 
-class TypedQueue(Queue, Generic[Message]):
+class TypedQueue(Queue, Generic[MessageType]):
     pass
 
 class Nats(Transport):
@@ -43,11 +43,11 @@ class Nats(Transport):
         await self.connection.publish(topic, payload)
         self.logger.debug("Sent message", extra={"topic": topic, "payload": payload})
 
-    async def subscribe(self, topic: str) -> TypedQueue[Message]:
+    async def subscribe(self, topic: str) -> TypedQueue[MessageType]:
         queue = asyncio.Queue()
 
         async def message_handler(raw: Msg):
-            message = Message(reply=raw.reply, payload=raw.data)
+            message = MessageType(reply=raw.reply, payload=raw.data)
             await queue.put(message)
 
         subscription = await self.connection.subscribe(topic, cb=message_handler)
@@ -63,7 +63,7 @@ class Nats(Transport):
     async def request(self, topic: str, payload: bytes):
         pass
 
-    async def respond(self, message: Message, response: bytes):
+    async def respond(self, message: MessageType, response: bytes):
         if message.reply is not None:
             await self.connection.publish(message.reply)
 
@@ -112,13 +112,13 @@ class SyncNats(SyncTransport):
         future.result()  # Wait for the publish to complete
         self.logger.debug("Sent message", extra={"topic": topic, "payload": payload})
 
-    def subscribe(self, topic: str, callback: Callable[[Message], None]):
+    def subscribe(self, topic: str, callback: Callable[[MessageType], None]):
         print("subscribe to: ", topic)
         if not self.connected:
             raise RuntimeError("Not connected to NATS")
 
         async def message_handler(msg: Msg):
-            message = Message(reply=msg.reply, payload=msg.data)
+            message = MessageType(reply=msg.reply, payload=msg.data)
 
             if callback is None:
                 return
@@ -152,7 +152,7 @@ class SyncNats(SyncTransport):
     def request(self, topic: str, payload: bytes):
         pass  # Implement synchronous request logic if needed
 
-    def respond(self, message: Message, response: bytes):
+    def respond(self, message: MessageType, response: bytes):
         if not self.connected:
             raise RuntimeError("Not connected to NATS")
         
