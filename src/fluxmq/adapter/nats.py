@@ -196,6 +196,9 @@ class NatsTopic(Topic):
     def node_settings(self, node_id: str):
         return f"node.{node_id}.set_settings"
     
+    def node_created(self, node_id: str):
+        return f"node.{node_id}.created"
+    
     def service_settings(self, service_id: str):
         return f"service.{service_id}.set_settings"
 

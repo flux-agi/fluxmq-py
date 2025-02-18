@@ -58,6 +58,10 @@ class Topic(ABC):
         pass
 
     @abstractmethod
+    def node_created(self, node_id: str):
+        pass
+
+    @abstractmethod
     def service_settings(self, service_id: str):
         """
         sub topic to listen by service and get config of service.
