@@ -5,5 +5,7 @@ setup(
     version="0.3.0",
     package_dir={"": "src"},
     packages=find_packages(where="src"),
-    install_requires=[],
+    install_requires=[
+        "nats-py>=2.0.0"
+    ],
 )
