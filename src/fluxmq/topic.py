@@ -30,6 +30,18 @@ class Topic(ABC):
         """
         pass
 
+    @abstractmethod
+    def get_common_data(self, service_id: str):
+        pass
+    
+    @abstractmethod
+    def ide_status(self):
+        pass
+    
+    @abstractmethod
+    def set_common_data(self, service_id: str):
+        pass
+    
     def restart_node(self, node_id: str):
         """
         sub topic for restart command for node

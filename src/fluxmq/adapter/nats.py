@@ -164,9 +164,18 @@ class NatsTopic(Topic):
     def set_service_state(self, service_id: str):
         return f"service.{service_id}.set_common_state"
 
-    def get_service_state(self, service_id, str):
+    def get_service_state(self, service_id: str):
         return f"service.{service_id}.get_common_state"
+    
+    def get_common_data(self, service_id: str):
+        return f"service.{service_id}.get_common_data"
+    
+    def set_common_data(self, service_id: str):
+        return f"service.{service_id}.get_common_data"
 
+    def ide_status(self):
+        return f"ide.status"
+    
     def start(self, service_id: str):
         return f"service.{service_id}.start"
 
