@@ -171,7 +171,7 @@ class NatsTopic(Topic):
         return f"service.{service_id}.get_common_data"
     
     def set_common_data(self, service_id: str):
-        return f"service.{service_id}.get_common_data"
+        return f"service.{service_id}.set_common_data"
 
     def ide_status(self):
         return f"ide.status"
