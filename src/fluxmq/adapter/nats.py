@@ -7,13 +7,15 @@ import concurrent.futures
 import socket
 import time
 import os
+from typing import Any, Awaitable, Callable, Dict, List, Optional, Set, Union
 
 from asyncio import Queue
 from logging import Logger, getLogger
 from nats.aio.client import Client as NATS
 from nats.aio.msg import Msg
 from nats.aio.subscription import Subscription
-from typing import Callable, Dict, List, TypeVar, Generic, Optional, Union, Any, Awaitable
+from nats.js.api import StreamConfig, ConsumerConfig
+from nats.js.client import JetStreamContext
 
 from fluxmq.message import Message
 from fluxmq.status import Status, StandardStatus
@@ -254,13 +256,13 @@ class Nats(Transport):
             self.logger.debug(f"Exception details: {traceback.format_exc()}")
             raise
 
-    async def subscribe(self, topic: str, handler: Callable[[Message], Awaitable[None]]) -> Subscription:
+    async def subscribe(self, topic: str, handler: Union[Callable[[Message], Awaitable[None]], Callable[[Message], None]]) -> Subscription:
         """
         Subscribe to a topic with a message handler.
         
         Args:
             topic: The topic to subscribe to
-            handler: Async callback function that will be called with each message
+            handler: Callback function that will be called with each message (can be async or sync)
             
         Returns:
             A subscription object that can be used to unsubscribe
@@ -280,7 +282,12 @@ class Nats(Transport):
                         reply=raw.reply,
                         headers=raw.header
                     )
-                    await handler(message)
+                    # Check if the handler is awaitable
+                    if asyncio.iscoroutinefunction(handler):
+                        await handler(message)
+                    else:
+                        # If not awaitable, run it directly
+                        handler(message)
                 except Exception as e:
                     self.logger.error(f"Error in message handler for topic {topic}: {str(e)}")
                     self.logger.debug(f"Exception details: {traceback.format_exc()}")
