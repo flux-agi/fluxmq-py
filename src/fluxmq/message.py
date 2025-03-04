@@ -14,11 +14,12 @@ class Message:
     """
     
     reply: Optional[str]
-    data: Union[bytes, str]
+    data: Optional[Union[bytes, str]]
+    payload: Union[bytes, str]
     headers: Dict[str, str]
 
     def __init__(self, 
-                 data: Union[bytes, str], 
+                 payload: Union[bytes, str], 
                  reply: Optional[str] = None,
                  headers: Optional[Dict[str, str]] = None):
         """
@@ -29,7 +30,8 @@ class Message:
             reply: Optional reply subject for request-reply patterns
             headers: Optional headers associated with the message
         """
-        self.data = data
+        self.payload = payload
+        self.data = payload
         self.reply = reply
         self.headers = headers or {}
         
