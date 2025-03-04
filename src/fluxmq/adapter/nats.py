@@ -7,7 +7,7 @@ import concurrent.futures
 import socket
 import time
 import os
-from typing import Any, Awaitable, Callable, Dict, List, Optional, Set, Union
+from typing import Any, Awaitable, Callable, Dict, List, Optional, Set, Union, TypeVar, Generic
 
 from asyncio import Queue
 from logging import Logger, getLogger
