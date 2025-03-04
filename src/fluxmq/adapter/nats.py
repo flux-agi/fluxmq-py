@@ -56,26 +56,36 @@ class Nats(Transport):
         else:
             self.logger = logger
 
-    async def connect(self) -> None:
+    async def connect(self, url: str = None) -> None:
         """
         Connect to the NATS server.
         
+        Args:
+            url: The URL of the NATS server. If not provided, uses the URL from initialization.
+            
         Raises:
             ConnectionError: If connection to the NATS server fails
         """
+        if url:
+            self.url = url
+            
         try:
-            # Add more connection options for reliability
-            self.connection = await nats.connect(
-                servers=self.servers,
-                reconnect_time_wait=2,
-                max_reconnect_attempts=10,
-                connect_timeout=10
+            self.logger.debug(f"Connecting to NATS server at {self.url}")
+            
+            # Connect with improved reliability options
+            await self.connection.connect(
+                servers=[self.url],
+                reconnect_time_wait=2,       # Wait 2 seconds between reconnect attempts
+                max_reconnect_attempts=10,    # Try to reconnect up to 10 times
+                connect_timeout=10            # Connection timeout in seconds
             )
-            self.logger.debug(f"Connected to NATS servers: {self.servers}")
+            
+            self.logger.debug(f"Successfully connected to NATS server at {self.url}")
         except Exception as e:
-            self.logger.error(f"Failed to connect to NATS servers: {str(e)}")
-            self.logger.debug(f"Exception details: {traceback.format_exc()}")
-            raise ConnectionError(f"Failed to connect to NATS servers: {str(e)}") from e
+            error_msg = f"Failed to connect to NATS server at {self.url}: {str(e)}"
+            self.logger.error(error_msg)
+            self.logger.debug(f"Connection error details: {traceback.format_exc()}")
+            raise ConnectionError(error_msg)
 
     async def publish(self, topic: str, payload: Union[bytes, str]) -> None:
         """
