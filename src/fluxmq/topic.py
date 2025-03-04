@@ -315,8 +315,8 @@ class StandardTopic(Topic):
             prefix: Optional prefix to prepend to all topics
         """
         self.prefix = prefix or ""
-        if self.prefix and not self.prefix.endswith('/'):
-            self.prefix += '/'
+        if self.prefix and not self.prefix.endswith('.'):
+            self.prefix += '.'
     
     def _make_topic(self, parts: List[str]) -> str:
         """
@@ -328,7 +328,7 @@ class StandardTopic(Topic):
         Returns:
             The complete topic string
         """
-        return f"{self.prefix}{'/'.join(parts)}"
+        return f"{self.prefix}{'.'.join(parts)}"
     
     def status(self, service_id: str) -> str:
         return self._make_topic(["service", service_id, "status"])
