@@ -64,7 +64,13 @@ class Nats(Transport):
             ConnectionError: If connection to the NATS server fails
         """
         try:
-            self.connection = await nats.connect(servers=self.servers)
+            # Add more connection options for reliability
+            self.connection = await nats.connect(
+                servers=self.servers,
+                reconnect_time_wait=2,
+                max_reconnect_attempts=10,
+                connect_timeout=10
+            )
             self.logger.debug(f"Connected to NATS servers: {self.servers}")
         except Exception as e:
             self.logger.error(f"Failed to connect to NATS servers: {str(e)}")
