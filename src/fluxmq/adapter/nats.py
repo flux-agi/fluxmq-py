@@ -4,6 +4,9 @@ import json
 import traceback
 import nats
 import concurrent.futures
+import socket
+import time
+import os
 
 from asyncio import Queue
 from logging import Logger, getLogger
@@ -27,6 +30,31 @@ class TypedQueue(Queue, Generic[MessageType]):
     """
     pass
 
+def resolve_hostname(hostname: str) -> str:
+    """
+    Attempt to resolve a hostname to an IP address.
+    
+    Args:
+        hostname: The hostname to resolve
+        
+    Returns:
+        The resolved IP address or the original hostname if resolution fails
+    """
+    try:
+        # Extract hostname from NATS URL if it's a URL
+        if hostname.startswith("nats://"):
+            hostname = hostname.replace("nats://", "")
+            # Remove port if present
+            if ":" in hostname:
+                hostname = hostname.split(":")[0]
+        
+        # Try to resolve the hostname
+        ip_address = socket.gethostbyname(hostname)
+        return ip_address
+    except socket.gaierror:
+        # If resolution fails, return the original hostname
+        return hostname
+
 class Nats(Transport):
     """
     NATS implementation of the Transport interface.
@@ -39,6 +67,8 @@ class Nats(Transport):
     servers: List[str]
     subscriptions: Dict[str, Subscription]
     url: str
+    _connection_attempts: int = 0
+    _max_connection_attempts: int = 10
 
     def __init__(self, servers: List[str] = None, logger: Optional[Logger] = None):
         """
@@ -74,6 +104,67 @@ class Nats(Transport):
         if url:
             self.url = url
             
+        # Reset connection attempts counter
+        self._connection_attempts = 0
+        
+        # Try to connect with multiple attempts
+        while self._connection_attempts < self._max_connection_attempts:
+            try:
+                await self._connect()
+                return  # Connection successful
+            except Exception as e:
+                self._connection_attempts += 1
+                if self._connection_attempts >= self._max_connection_attempts:
+                    error_msg = f"Failed to connect to NATS server at {self.url} after {self._max_connection_attempts} attempts: {str(e)}"
+                    self.logger.error(error_msg)
+                    self.logger.debug(f"Connection error details: {traceback.format_exc()}")
+                    raise ConnectionError(error_msg)
+                
+                # Try to resolve hostname to IP if it's a DNS resolution error
+                if isinstance(e, nats.errors.NoServersError) or "Name does not resolve" in str(e):
+                    self._try_resolve_hostname()
+                
+                # Wait before retrying
+                wait_time = min(2 ** self._connection_attempts, 30)  # Exponential backoff with max 30 seconds
+                self.logger.warning(f"Connection attempt {self._connection_attempts} failed. Retrying in {wait_time} seconds...")
+                await asyncio.sleep(wait_time)
+
+    def _try_resolve_hostname(self) -> None:
+        """
+        Try to resolve the hostname in the URL to an IP address.
+        """
+        try:
+            # Extract hostname from URL
+            if self.url.startswith("nats://"):
+                parts = self.url.replace("nats://", "").split(":")
+                hostname = parts[0]
+                port = parts[1] if len(parts) > 1 else "4222"
+                
+                # Try to resolve the hostname
+                self.logger.debug(f"Attempting to resolve hostname: {hostname}")
+                ip_address = resolve_hostname(hostname)
+                
+                if ip_address != hostname:
+                    # Update URL with IP address
+                    new_url = f"nats://{ip_address}:{port}"
+                    self.logger.info(f"Resolved hostname {hostname} to IP {ip_address}. Updated URL: {new_url}")
+                    self.url = new_url
+                else:
+                    self.logger.warning(f"Could not resolve hostname: {hostname}")
+                    
+                    # Try to get IP from environment variable as fallback
+                    nats_ip = os.environ.get("NATS_IP")
+                    if nats_ip:
+                        new_url = f"nats://{nats_ip}:{port}"
+                        self.logger.info(f"Using NATS_IP from environment: {new_url}")
+                        self.url = new_url
+        except Exception as e:
+            self.logger.warning(f"Error while trying to resolve hostname: {str(e)}")
+
+    async def _connect(self) -> None:
+        """
+        Internal method to connect to the NATS server.
+        """
         try:
             self.logger.debug(f"Connecting to NATS server at {self.url}")
             
@@ -86,15 +177,53 @@ class Nats(Transport):
                 servers=[self.url],
                 reconnect_time_wait=2,       # Wait 2 seconds between reconnect attempts
                 max_reconnect_attempts=10,    # Try to reconnect up to 10 times
-                connect_timeout=10            # Connection timeout in seconds
+                connect_timeout=10,           # Connection timeout in seconds
+                allow_reconnect=True,         # Allow reconnection
+                ping_interval=20,             # Send ping every 20 seconds
+                max_outstanding_pings=5,      # Allow up to 5 outstanding pings
+                error_cb=self._on_error_async,      # Error callback
+                disconnected_cb=self._on_disconnect_async,  # Disconnected callback
+                reconnected_cb=self._on_reconnect_async,    # Reconnected callback
+                closed_cb=self._on_close_async      # Closed callback
             )
             
             self.logger.debug(f"Successfully connected to NATS server at {self.url}")
         except Exception as e:
-            error_msg = f"Failed to connect to NATS server at {self.url}: {str(e)}"
-            self.logger.error(error_msg)
+            self.logger.error(f"Failed to connect to NATS server at {self.url}: {str(e)}")
             self.logger.debug(f"Connection error details: {traceback.format_exc()}")
-            raise ConnectionError(error_msg)
+            raise
+
+    async def _on_error_async(self, error: Exception) -> None:
+        """Async callback for connection errors."""
+        self._on_error(error)
+
+    async def _on_disconnect_async(self) -> None:
+        """Async callback for disconnection events."""
+        self._on_disconnect()
+
+    async def _on_reconnect_async(self) -> None:
+        """Async callback for reconnection events."""
+        self._on_reconnect()
+
+    async def _on_close_async(self) -> None:
+        """Async callback for connection close events."""
+        self._on_close()
+
+    def _on_error(self, error: Exception) -> None:
+        """Callback for connection errors."""
+        self.logger.error(f"NATS connection error: {str(error)}")
+
+    def _on_disconnect(self) -> None:
+        """Callback for disconnection events."""
+        self.logger.warning("Disconnected from NATS server")
+
+    def _on_reconnect(self) -> None:
+        """Callback for reconnection events."""
+        self.logger.info(f"Reconnected to NATS server at {self.url}")
+
+    def _on_close(self) -> None:
+        """Callback for connection close events."""
+        self.logger.info("NATS connection closed")
 
     async def publish(self, topic: str, payload: Union[bytes, str]) -> None:
         """
@@ -301,6 +430,9 @@ class SyncNats(SyncTransport):
         self._lock = threading.RLock()
         self._loop = None
         self._thread = None
+        self._url = self._servers[0] if self._servers else "nats://localhost:4222"
+        self._connection_attempts = 0
+        self._max_connection_attempts = 10
         
         if logger is None:
             self._logger = getLogger("fluxmq.nats.sync")
@@ -321,51 +453,158 @@ class SyncNats(SyncTransport):
             if self._nc is not None:
                 self._logger.warning("Already connected to NATS server")
                 return True
-                
-            try:
-                # Create a new event loop
-                self._loop = asyncio.new_event_loop()
-                
-                # Create and start the background thread
-                self._thread = threading.Thread(
-                    target=self._run_event_loop,
-                    daemon=True
-                )
-                self._thread.start()
-                
-                # Run the connect coroutine in the event loop
-                future = asyncio.run_coroutine_threadsafe(
-                    self._connect(),
-                    self._loop
-                )
-                
-                # Wait for the connection to complete
-                future.result(timeout=10)
-                
-                self._logger.debug(f"Connected to NATS servers: {self._servers}")
-                return True
-            except Exception as e:
-                self._logger.error(f"Failed to connect to NATS servers: {str(e)}")
-                self._logger.debug(f"Exception details: {traceback.format_exc()}")
-                
-                # Clean up resources
-                if self._thread is not None and self._thread.is_alive():
-                    if self._loop is not None:
-                        asyncio.run_coroutine_threadsafe(
-                            self._close(),
-                            self._loop
+            
+            # Reset connection attempts
+            self._connection_attempts = 0
+            
+            while self._connection_attempts < self._max_connection_attempts:
+                try:
+                    # Create a new event loop if needed
+                    if self._loop is None:
+                        self._loop = asyncio.new_event_loop()
+                    
+                    # Create and start the background thread if needed
+                    if self._thread is None or not self._thread.is_alive():
+                        self._thread = threading.Thread(
+                            target=self._run_event_loop,
+                            daemon=True
                         )
+                        self._thread.start()
+                    
+                    # Run the connect coroutine in the event loop
+                    future = asyncio.run_coroutine_threadsafe(
+                        self._connect(),
+                        self._loop
+                    )
+                    
+                    # Wait for the connection to complete
+                    future.result(timeout=10)
+                    
+                    self._logger.debug(f"Connected to NATS server at {self._url}")
+                    return True
+                    
+                except Exception as e:
+                    self._connection_attempts += 1
+                    self._logger.warning(f"Connection attempt {self._connection_attempts} failed: {str(e)}")
+                    
+                    if self._connection_attempts >= self._max_connection_attempts:
+                        self._logger.error(f"Failed to connect to NATS server after {self._max_connection_attempts} attempts")
+                        self._logger.debug(f"Exception details: {traceback.format_exc()}")
+                        
+                        # Clean up resources
+                        self._cleanup_resources()
+                        
+                        raise ConnectionError(f"Failed to connect to NATS server: {str(e)}") from e
+                    
+                    # Try to resolve hostname if it's a DNS resolution error
+                    if "Name does not resolve" in str(e) or "No servers available for connection" in str(e):
+                        self._try_resolve_hostname()
+                    
+                    # Wait before retrying
+                    wait_time = min(2 ** self._connection_attempts, 30)  # Exponential backoff with max 30 seconds
+                    self._logger.warning(f"Retrying connection in {wait_time} seconds...")
+                    time.sleep(wait_time)
+            
+            # This should never be reached due to the exception above
+            return False
+
+    def _try_resolve_hostname(self) -> None:
+        """
+        Try to resolve the hostname in the URL to an IP address.
+        """
+        try:
+            # Extract hostname from URL
+            if self._url.startswith("nats://"):
+                parts = self._url.replace("nats://", "").split(":")
+                hostname = parts[0]
+                port = parts[1] if len(parts) > 1 else "4222"
                 
-                raise ConnectionError(f"Failed to connect to NATS servers: {str(e)}") from e
+                # Try to resolve the hostname
+                self._logger.debug(f"Attempting to resolve hostname: {hostname}")
+                ip_address = resolve_hostname(hostname)
+                
+                if ip_address != hostname:
+                    # Update URL with IP address
+                    new_url = f"nats://{ip_address}:{port}"
+                    self._logger.info(f"Resolved hostname {hostname} to IP {ip_address}. Updated URL: {new_url}")
+                    self._url = new_url
+                    self._servers = [self._url]
+                else:
+                    self._logger.warning(f"Could not resolve hostname: {hostname}")
+                    
+                    # Try to get IP from environment variable as fallback
+                    nats_ip = os.environ.get("NATS_IP")
+                    if nats_ip:
+                        new_url = f"nats://{nats_ip}:{port}"
+                        self._logger.info(f"Using NATS_IP from environment: {new_url}")
+                        self._url = new_url
+                        self._servers = [self._url]
+        except Exception as e:
+            self._logger.warning(f"Error while trying to resolve hostname: {str(e)}")
+
+    def _cleanup_resources(self) -> None:
+        """Clean up resources when connection fails."""
+        if self._thread is not None and self._thread.is_alive():
+            if self._loop is not None:
+                try:
+                    asyncio.run_coroutine_threadsafe(
+                        self._close(),
+                        self._loop
+                    )
+                except Exception as e:
+                    self._logger.warning(f"Error while cleaning up resources: {str(e)}")
 
     async def _connect(self) -> None:
         """Internal coroutine to connect to the NATS server."""
+        self._logger.debug(f"Connecting to NATS server at {self._url}")
+        
         self._nc = await nats.connect(
             servers=self._servers,
             reconnect_time_wait=2,       # Wait 2 seconds between reconnect attempts
             max_reconnect_attempts=10,    # Try to reconnect up to 10 times
-            connect_timeout=10            # Connection timeout in seconds
+            connect_timeout=10,           # Connection timeout in seconds
+            allow_reconnect=True,         # Allow reconnection
+            ping_interval=20,             # Send ping every 20 seconds
+            max_outstanding_pings=5,      # Allow up to 5 outstanding pings
+            error_cb=self._on_error_async,      # Error callback
+            disconnected_cb=self._on_disconnect_async,  # Disconnected callback
+            reconnected_cb=self._on_reconnect_async,    # Reconnected callback
+            closed_cb=self._on_close_async      # Closed callback
         )
+        
+        self._logger.debug(f"Successfully connected to NATS server at {self._url}")
+
+    async def _on_error_async(self, error: Exception) -> None:
+        """Async callback for connection errors."""
+        self._on_error(error)
+
+    async def _on_disconnect_async(self) -> None:
+        """Async callback for disconnection events."""
+        self._on_disconnect()
+
+    async def _on_reconnect_async(self) -> None:
+        """Async callback for reconnection events."""
+        self._on_reconnect()
+
+    async def _on_close_async(self) -> None:
+        """Async callback for connection close events."""
+        self._on_close()
+
+    def _on_error(self, error: Exception) -> None:
+        """Callback for connection errors."""
+        self._logger.error(f"NATS connection error: {str(error)}")
+
+    def _on_disconnect(self) -> None:
+        """Callback for disconnection events."""
+        self._logger.warning("Disconnected from NATS server")
+
+    def _on_reconnect(self) -> None:
+        """Callback for reconnection events."""
+        self._logger.info(f"Reconnected to NATS server at {self._url}")
+
+    def _on_close(self) -> None:
+        """Callback for connection close events."""
+        self._logger.info("NATS connection closed")
 
     def _run_event_loop(self) -> None:
         """Run the asyncio event loop in a background thread."""
@@ -449,7 +688,6 @@ class SyncNats(SyncTransport):
                 async def message_handler(raw: Msg) -> None:
                     try:
                         message = Message(
-                            topic=raw.subject,
                             data=raw.data,
                             reply=raw.reply,
                             headers=raw.header
