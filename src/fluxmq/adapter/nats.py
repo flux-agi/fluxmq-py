@@ -38,18 +38,23 @@ class Nats(Transport):
     logger: Logger
     servers: List[str]
     subscriptions: Dict[str, Subscription]
+    url: str
 
-    def __init__(self, servers: List[str], logger: Optional[Logger] = None):
+    def __init__(self, servers: List[str] = None, logger: Optional[Logger] = None):
         """
         Initialize a new NATS transport.
         
         Args:
-            servers: List of NATS server URLs
+            servers: List of NATS server URLs, defaults to ["nats://localhost:4222"] if not provided
             logger: Optional logger instance
         """
-        self.servers = servers
+        # Default to localhost if no servers provided
+        self.servers = servers if servers else ["nats://localhost:4222"]
         self.subscriptions = {}
         self.connection = None
+        
+        # Initialize the url attribute from the first server in the list
+        self.url = self.servers[0] if self.servers else "nats://localhost:4222"
         
         if logger is None:
             self.logger = getLogger("fluxmq.nats")
@@ -71,6 +76,10 @@ class Nats(Transport):
             
         try:
             self.logger.debug(f"Connecting to NATS server at {self.url}")
+            
+            # Initialize the NATS client if it doesn't exist
+            if self.connection is None:
+                self.connection = NATS()
             
             # Connect with improved reliability options
             await self.connection.connect(
@@ -277,15 +286,16 @@ class SyncNats(SyncTransport):
     using a background thread to run the asyncio event loop.
     """
     
-    def __init__(self, servers: List[str], logger: Optional[Logger] = None):
+    def __init__(self, servers: List[str] = None, logger: Optional[Logger] = None):
         """
         Initialize a new synchronous NATS transport.
         
         Args:
-            servers: List of NATS server URLs
+            servers: List of NATS server URLs, defaults to ["nats://localhost:4222"] if not provided
             logger: Optional logger instance
         """
-        self._servers = servers
+        # Default to localhost if no servers provided
+        self._servers = servers if servers else ["nats://localhost:4222"]
         self._nc = None
         self._subscriptions = {}
         self._lock = threading.RLock()
@@ -350,7 +360,12 @@ class SyncNats(SyncTransport):
 
     async def _connect(self) -> None:
         """Internal coroutine to connect to the NATS server."""
-        self._nc = await nats.connect(servers=self._servers)
+        self._nc = await nats.connect(
+            servers=self._servers,
+            reconnect_time_wait=2,       # Wait 2 seconds between reconnect attempts
+            max_reconnect_attempts=10,    # Try to reconnect up to 10 times
+            connect_timeout=10            # Connection timeout in seconds
+        )
 
     def _run_event_loop(self) -> None:
         """Run the asyncio event loop in a background thread."""
