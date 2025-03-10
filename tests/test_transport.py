@@ -43,7 +43,7 @@ class TestTypedQueue:
         queue = TypedQueue[Message]()
         
         # Create a message
-        msg = Message(topic="test/topic", data={"key": "value"})
+        msg = Message(topic="test/topic", payload={"key": "value"})
         
         # Put the message in the queue
         await queue.put(msg)
@@ -53,7 +53,7 @@ class TestTypedQueue:
         
         # Verify it's the same message
         assert retrieved_msg.topic == "test/topic"
-        assert retrieved_msg.data == {"key": "value"}
+        assert retrieved_msg.payload == {"key": "value"}
         
         # Mark the task as done
         queue.task_done()
@@ -77,11 +77,11 @@ class MockTransport(Transport):
         self.connected = False
         return True
     
-    async def publish(self, topic: str, data: Any, headers: Dict[str, str] = None):
+    async def publish(self, topic: str, payload: Any, headers: Dict[str, str] = None):
         if not self.connected:
             raise ConnectionError("Not connected")
         
-        message = Message(topic=topic, data=data, headers=headers)
+        message = Message(topic=topic, payload=payload, headers=headers)
         self.published_messages.append(message)
         return True
     
@@ -102,22 +102,22 @@ class MockTransport(Transport):
             return True
         return False
     
-    async def request(self, topic: str, data: Any, timeout: float = 5.0, headers: Dict[str, str] = None):
+    async def request(self, topic: str, payload: Any, timeout: float = 5.0, headers: Dict[str, str] = None):
         if not self.connected:
             raise ConnectionError("Not connected")
         
-        request_message = Message(topic=topic, data=data, headers=headers)
+        request_message = Message(topic=topic, payload=payload, headers=headers)
         self.requests.append(request_message)
         
         # Simulate a response
         response_message = Message(
             topic=f"response_{topic}",
-            data={"response": "test_response"},
+            payload={"response": "test_response"},
             headers={"correlation-id": "test_id"}
         )
         return response_message
     
-    async def respond(self, request_message: Message, data: Any, headers: Dict[str, str] = None):
+    async def respond(self, request_message: Message, payload: Any, headers: Dict[str, str] = None):
         if not self.connected:
             raise ConnectionError("Not connected")
         
@@ -126,7 +126,7 @@ class MockTransport(Transport):
         
         response_message = Message(
             topic=request_message.reply,
-            data=data,
+            payload=payload,
             headers=headers
         )
         self.responses.append(response_message)
@@ -170,7 +170,7 @@ class TestTransport:
         # Publish a message
         result = await mock_transport.publish(
             topic="test/topic",
-            data={"key": "value"},
+            payload={"key": "value"},
             headers={"content-type": "application/json"}
         )
         
@@ -179,7 +179,7 @@ class TestTransport:
         
         published_msg = mock_transport.published_messages[0]
         assert published_msg.topic == "test/topic"
-        assert published_msg.data == {"key": "value"}
+        assert published_msg.payload == {"key": "value"}
         assert published_msg.headers == {"content-type": "application/json"}
     
     async def test_publish_not_connected(self, mock_transport):
@@ -241,7 +241,7 @@ class TestTransport:
         # Send a request
         response = await mock_transport.request(
             topic="test/request",
-            data={"request": "test_request"},
+            payload={"request": "test_request"},
             timeout=2.0,
             headers={"content-type": "application/json"}
         )
@@ -249,11 +249,11 @@ class TestTransport:
         assert len(mock_transport.requests) == 1
         request_msg = mock_transport.requests[0]
         assert request_msg.topic == "test/request"
-        assert request_msg.data == {"request": "test_request"}
+        assert request_msg.payload == {"request": "test_request"}
         
         # Check the response
         assert response.topic == "response_test/request"
-        assert response.data == {"response": "test_response"}
+        assert response.payload == {"response": "test_response"}
     
     async def test_request_not_connected(self, mock_transport):
         """Test sending a request when not connected raises an error."""
@@ -268,14 +268,14 @@ class TestTransport:
         # Create a request message with a reply topic
         request_msg = Message(
             topic="test/request",
-            data={"request": "test_request"},
+            payload={"request": "test_request"},
             reply="test/reply"
         )
         
         # Send a response
         result = await mock_transport.respond(
             request_message=request_msg,
-            data={"response": "test_response"},
+            payload={"response": "test_response"},
             headers={"content-type": "application/json"}
         )
         
@@ -284,7 +284,7 @@ class TestTransport:
         
         response_msg = mock_transport.responses[0]
         assert response_msg.topic == "test/reply"
-        assert response_msg.data == {"response": "test_response"}
+        assert response_msg.payload == {"response": "test_response"}
         assert response_msg.headers == {"content-type": "application/json"}
     
     async def test_respond_no_reply_topic(self, mock_transport):
@@ -295,21 +295,21 @@ class TestTransport:
         # Create a request message without a reply topic
         request_msg = Message(
             topic="test/request",
-            data={"request": "test_request"}
+            payload={"request": "test_request"}
         )
         
         # Attempt to send a response
         with pytest.raises(ValueError):
             await mock_transport.respond(
                 request_message=request_msg,
-                data={"response": "test_response"}
+                payload={"response": "test_response"}
             )
     
     async def test_respond_not_connected(self, mock_transport):
         """Test responding when not connected raises an error."""
         request_msg = Message(
             topic="test/request",
-            data={"request": "test_request"},
+            payload={"request": "test_request"},
             reply="test/reply"
         )
         

@@ -334,10 +334,10 @@ class StandardTopic(Topic):
         return self._make_topic(["service", service_id, "status"])
     
     def set_service_state(self, service_id: str) -> str:
-        return self._make_topic(["service", service_id, "state"])
+        return self._make_topic(["service", service_id, "set_common_state"])
     
     def get_service_state(self, service_id: str) -> str:
-        return self._make_topic(["service", service_id, "state"])
+        return self._make_topic(["service", service_id, "get_common_state"])
     
     def get_common_data(self, service_id: str) -> str:
         return self._make_topic(["service", service_id, "get_common_data"])
@@ -346,25 +346,25 @@ class StandardTopic(Topic):
         return self._make_topic(["ide", "status"])
     
     def set_common_data(self, service_id: str) -> str:
-        return self._make_topic(["service", service_id, "common_data"])
+        return self._make_topic(["service", service_id, "set_common_data"])
     
     def restart_node(self, node_id: str) -> str:
         return self._make_topic(["node", node_id, "restart"])
     
     def dev_mode(self, service_id: str) -> str:
-        return self._make_topic(["service", service_id, "dev_mode"])
+        return self._make_topic(["service", "development_mode", service_id])
     
     def configuration(self, service_id: str) -> str:
-        return self._make_topic(["service", service_id, "config"])
+        return self._make_topic(["service", service_id, "set_config"])
     
     def node_settings(self, node_id: str) -> str:
-        return self._make_topic(["node", node_id, "settings"])
+        return self._make_topic(["node", node_id, "set_settings"])
     
     def node_created(self, node_id: str) -> str:
         return self._make_topic(["node", node_id, "created"])
     
     def service_settings(self, service_id: str) -> str:
-        return self._make_topic(["service", service_id, "settings"])
+        return self._make_topic(["service", service_id, "set_settings"])
     
     def start(self, service_id: str) -> str:
         return self._make_topic(["service", service_id, "start"])
@@ -373,16 +373,16 @@ class StandardTopic(Topic):
         return self._make_topic(["service", service_id, "stop"])
     
     def time(self) -> str:
-        return self._make_topic(["system", "time"])
+        return self._make_topic(["service", "tick"])
     
     def configuration_request(self, service_id: str) -> str:
-        return self._make_topic(["service", service_id, "request_config"])
+        return self._make_topic(["service", service_id, "get_config"])
     
     def status_request(self, service_id: str) -> str:
         return self._make_topic(["service", service_id, "request_status"])
     
     def node_state_request(self, service_id: str) -> str:
-        return self._make_topic(["service", service_id, "request_node_state"])
+        return self._make_topic(["service", service_id, "state_request"])
     
     def node_status(self, node_id: str) -> str:
         return self._make_topic(["node", node_id, "status"])

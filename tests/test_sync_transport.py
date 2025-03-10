@@ -139,7 +139,7 @@ class TestSyncTransport:
         
         published_msg = mock_sync_transport.published_messages[0]
         assert published_msg.topic == "test/topic"
-        assert published_msg.data == {"key": "value"}
+        assert published_msg.payload == {"key": "value"}
         assert published_msg.headers == {"content-type": "application/json"}
     
     def test_publish_not_connected(self, mock_sync_transport):
@@ -209,11 +209,11 @@ class TestSyncTransport:
         assert len(mock_sync_transport.requests) == 1
         request_msg = mock_sync_transport.requests[0]
         assert request_msg.topic == "test/request"
-        assert request_msg.data == {"request": "test_request"}
+        assert request_msg.payload == {"request": "test_request"}
         
         # Check the response
         assert response.topic == "response_test/request"
-        assert response.data == {"response": "test_response"}
+        assert response.payload == {"response": "test_response"}
     
     def test_request_not_connected(self, mock_sync_transport):
         """Test sending a request when not connected raises an error."""
@@ -244,7 +244,7 @@ class TestSyncTransport:
         
         response_msg = mock_sync_transport.responses[0]
         assert response_msg.topic == "test/reply"
-        assert response_msg.data == {"response": "test_response"}
+        assert response_msg.payload == {"response": "test_response"}
         assert response_msg.headers == {"content-type": "application/json"}
     
     def test_respond_no_reply_topic(self, mock_sync_transport):

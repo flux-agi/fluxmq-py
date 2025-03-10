@@ -9,12 +9,11 @@ class Message:
     
     Attributes:
         reply: The reply subject for request-reply messaging patterns
-        data: The message payload data
+        payload: The message payload data
         headers: Optional headers associated with the message
     """
     
     reply: Optional[str]
-    data: Optional[Union[bytes, str]]
     payload: Union[bytes, str]
     headers: Dict[str, str]
 
@@ -26,12 +25,11 @@ class Message:
         Initialize a new Message.
         
         Args:
-            data: The message payload data
+            payload: The message payload data
             reply: Optional reply subject for request-reply patterns
             headers: Optional headers associated with the message
         """
         self.payload = payload
-        self.data = payload
         self.reply = reply
         self.headers = headers or {}
         
@@ -42,9 +40,9 @@ class Message:
         Returns:
             The message data as a string, decoded if necessary
         """
-        if isinstance(self.data, bytes):
-            return self.data.decode('utf-8')
-        return self.data
+        if isinstance(self.payload, bytes):
+            return self.payload.decode('utf-8')
+        return self.payload
         
     def get_data_as_bytes(self) -> bytes:
         """
@@ -53,9 +51,9 @@ class Message:
         Returns:
             The message data as bytes, encoded if necessary
         """
-        if isinstance(self.data, str):
-            return self.data.encode('utf-8')
-        return self.data
+        if isinstance(self.payload, str):
+            return self.payload.encode('utf-8')
+        return self.payload
     
     def add_header(self, key: str, value: str) -> None:
         """
@@ -87,8 +85,8 @@ class Message:
         Returns:
             A string representation of the message
         """
-        data_preview = str(self.data)
-        if len(data_preview) > 50:
-            data_preview = data_preview[:47] + "..."
+        payload_preview = str(self.payload)
+        if len(payload_preview) > 50:
+            payload_preview = payload_preview[:47] + "..."
         
-        return f"Message(reply={self.reply}, data={data_preview}, headers={self.headers})"
+        return f"Message(reply={self.reply}, payload={payload_preview}, headers={self.headers})"
