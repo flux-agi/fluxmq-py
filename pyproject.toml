@@ -1,15 +1,17 @@
 [build-system]
-requires = ["setuptools >= 45.2.0", "wheel >= 0.36.0"]
+requires = ["setuptools<45.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "fluxmq"
 version = "0.2.0"
-authors = [
-    {name = "Ildar Tamendarov", email = "ildar.tamendarov@gmail.com"}
-]
 description = "FluxMQ for Python"
+authors = [
+    {name = "Eugene Zimnitskiy", email = "karpotkin@gmail.com"},
+]
+license = {text = "MIT"}
 readme = "README.md"
+requires-python = ">=3.6"
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
@@ -21,11 +23,10 @@ classifiers = [
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10"
 ]
-requires-python = ">=3.6"
-dynamic = ["dependencies"]
 
-[tool.setuptools.dynamic]
-dependencies = {file = ["requirements.txt"]}
+[tool.setuptools]
+package-dir = {"" = "src"}
+packages = ["fluxmq"]
 
 [tool.commitizen]
 name = "cz_conventional_commits"
@@ -34,3 +35,7 @@ version_scheme = "pep440"
 version_provider = "pep621"
 update_changelog_on_bump = true
 major_version_zero = true
+
+[project.urls]
+"Homepage" = "https://github.com/flux/fluxmq-py"
+"Bug Tracker" = "https://github.com/flux/fluxmq-py/issues"
