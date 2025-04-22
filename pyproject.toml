@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "fluxmq"
-version = "0.2.0"
+version = "0.15.0"
 description = "FluxMQ for Python"
 authors = [
     {name = "Eugene Zimnitskiy", email = "karpotkin@gmail.com"},

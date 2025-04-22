@@ -1,3 +1,11 @@
+## 0.15.0 (2024-09-20)
+
+### Feat
+
+- Add message headers propagation using contextvars
+- Support automatic header propagation across all transports
+- Enable tracing of message chains through header propagation
+
 ## 0.14.0 (2024-12-03)
 
 ### Feat
