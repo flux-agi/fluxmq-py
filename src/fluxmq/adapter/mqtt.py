@@ -10,7 +10,7 @@ import paho.mqtt.client as mqtt
 from fluxmq.message import Message
 from fluxmq.status import Status, StandardStatus
 from fluxmq.topic import Topic, StandardTopic
-from fluxmq.transport import Transport, SyncTransport
+from fluxmq.transport import Transport, SyncTransport, current_headers
 
 
 class MQTT(Transport):
@@ -97,26 +97,52 @@ class MQTT(Transport):
         else:
             self.logger.info("Disconnected from MQTT broker")
     
-    async def _on_message(self, client, userdata, msg):
+    def _on_message(self, client, userdata, msg):
         """
         Callback for when a message is received from the broker.
         """
         try:
             topic = msg.topic
             if topic in self.subscriptions:
+                # Extract properties - MQTT 5.0 supports properties, but we'll use a special format
+                # for MQTT 3.x: encode headers in JSON in the first part of the payload if it's formatted as:
+                # {__headers__: {...}, ...payload}
+                headers = {}
+                data = msg.payload
+                
+                if msg.payload:
+                    try:
+                        # Try to decode as JSON and check for a __headers__ field
+                        decoded = json.loads(msg.payload.decode('utf-8'))
+                        if isinstance(decoded, dict) and '__headers__' in decoded:
+                            headers = decoded['__headers__']
+                            # Remove headers from data and re-encode
+                            payload_data = {k: v for k, v in decoded.items() if k != '__headers__'}
+                            data = json.dumps(payload_data).encode('utf-8')
+                    except (json.JSONDecodeError, UnicodeDecodeError):
+                        # Not JSON or not UTF-8, use raw payload
+                        pass
+                
+                # Create the message
                 message = Message(
-                    data=msg.payload,
-                    reply=None,  # MQTT doesn't have a built-in reply concept
-                    headers={}
+                    payload=data,
+                    # MQTT doesn't have a built-in reply concept
+                    reply=None,
+                    headers=headers
                 )
                 
                 # Call all handlers for this topic
                 for handler in self.subscriptions[topic]:
+                    # Set the context headers for propagation
+                    token = current_headers.set(headers)
                     try:
-                        await handler(message)
+                        asyncio.create_task(handler(message))
                     except Exception as e:
                         self.logger.error(f"Error in message handler for topic {topic}: {str(e)}")
                         self.logger.debug(f"Exception details: {traceback.format_exc()}")
+                    finally:
+                        # Reset context headers
+                        current_headers.reset(token)
         except Exception as e:
             self.logger.error(f"Error processing MQTT message: {str(e)}")
             self.logger.debug(f"Exception details: {traceback.format_exc()}")
@@ -161,13 +187,14 @@ class MQTT(Transport):
             self.logger.debug(f"Exception details: {traceback.format_exc()}")
             raise
 
-    async def publish(self, topic: str, payload: Union[bytes, str]) -> None:
+    async def publish(self, topic: str, payload: Union[bytes, str], headers: Optional[Dict[str, str]] = None) -> None:
         """
         Publish a message to a topic.
         
         Args:
             topic: The topic to publish to
             payload: The message payload to publish
+            headers: Optional headers to include with the message
             
         Raises:
             ConnectionError: If not connected to the MQTT broker
@@ -177,12 +204,53 @@ class MQTT(Transport):
             raise ConnectionError("Not connected to MQTT broker")
             
         try:
-            if not isinstance(payload, bytes):
+            # Merge headers with context headers
+            merged_headers = current_headers.get().copy()
+            if headers:
+                merged_headers.update(headers)
+            
+            # Format the payload with headers
+            if merged_headers:
+                # If payload is JSON serializable, add headers to it
+                if isinstance(payload, (bytes, str)):
+                    try:
+                        # Try to decode and parse as JSON if it's bytes or string
+                        if isinstance(payload, bytes):
+                            decoded_payload = json.loads(payload.decode('utf-8'))
+                        else:
+                            decoded_payload = json.loads(payload)
+                        
+                        # Add headers and re-encode
+                        if isinstance(decoded_payload, dict):
+                            decoded_payload['__headers__'] = merged_headers
+                            payload = json.dumps(decoded_payload).encode('utf-8')
+                    except (json.JSONDecodeError, UnicodeDecodeError):
+                        # Not JSON or not UTF-8, create a new JSON object with headers and payload
+                        new_payload = {
+                            '__headers__': merged_headers,
+                            'data': payload.decode('utf-8') if isinstance(payload, bytes) else payload
+                        }
+                        payload = json.dumps(new_payload).encode('utf-8')
+                else:
+                    # It's some other object, convert to dict and add headers
+                    if isinstance(payload, dict):
+                        payload_dict = payload.copy()
+                        payload_dict['__headers__'] = merged_headers
+                    else:
+                        # Convert non-dict to JSON with headers
+                        payload_dict = {
+                            '__headers__': merged_headers,
+                            'data': payload
+                        }
+                    payload = json.dumps(payload_dict).encode('utf-8')
+            elif not isinstance(payload, bytes):
+                # No headers but need to encode payload
                 if isinstance(payload, str):
                     payload = payload.encode('utf-8')
                 else:
                     payload = json.dumps(payload).encode('utf-8')
-                    
+            
+            # Publish to MQTT
             result = self.client.publish(topic, payload)
             if result.rc != mqtt.MQTT_ERR_SUCCESS:
                 raise ValueError(f"Failed to publish message to topic {topic}, error code: {result.rc}")
@@ -258,7 +326,7 @@ class MQTT(Transport):
         else:
             self.logger.warning(f"Attempted to unsubscribe from topic {topic} that was not subscribed")
 
-    async def request(self, topic: str, payload: Union[bytes, str]) -> Message:
+    async def request(self, topic: str, payload: Union[bytes, str], headers: Optional[Dict[str, str]] = None) -> Message:
         """
         Send a request and wait for a response.
         
@@ -268,6 +336,7 @@ class MQTT(Transport):
         Args:
             topic: The topic to send the request to
             payload: The request payload
+            headers: Optional headers to include with the request
             
         Returns:
             The response message
@@ -292,13 +361,22 @@ class MQTT(Transport):
             # Subscribe to the response topic
             await self.subscribe(response_topic, response_handler)
             
+            # Merge headers with context headers
+            merged_headers = current_headers.get().copy()
+            if headers:
+                merged_headers.update(headers)
+            
             try:
-                # Add the response topic to the payload if it's a dict
-                if not isinstance(payload, (bytes, str)):
-                    payload = {**payload, "response_topic": response_topic}
+                # Prepare the payload with the response topic
+                request_payload = payload
+                if isinstance(request_payload, dict):
+                    request_payload = request_payload.copy()
+                    request_payload["response_topic"] = response_topic
+                elif not isinstance(request_payload, (bytes, str)):
+                    request_payload = {"data": request_payload, "response_topic": response_topic}
                 
-                # Publish the request
-                await self.publish(topic, payload)
+                # Publish the request with headers
+                await self.publish(topic, request_payload, merged_headers)
                 
                 # Wait for the response with a timeout
                 try:
@@ -315,13 +393,14 @@ class MQTT(Transport):
                 self.logger.debug(f"Exception details: {traceback.format_exc()}")
             raise
 
-    async def respond(self, message: Message, response: Union[bytes, str]) -> None:
+    async def respond(self, message: Message, response: Union[bytes, str], headers: Optional[Dict[str, str]] = None) -> None:
         """
         Respond to a request message.
         
         Args:
             message: The request message to respond to
             response: The response data
+            headers: Optional headers to include with the response
             
         Raises:
             ConnectionError: If not connected to the MQTT broker
@@ -332,21 +411,28 @@ class MQTT(Transport):
             
         # Extract the response topic from the message
         response_topic = None
-        if isinstance(message.data, bytes):
+        if isinstance(message.payload, bytes):
             try:
-                data = json.loads(message.data.decode('utf-8'))
+                data = json.loads(message.payload.decode('utf-8'))
                 if isinstance(data, dict) and "response_topic" in data:
                     response_topic = data["response_topic"]
             except:
                 pass
-        elif isinstance(message.data, dict) and "response_topic" in message.data:
-            response_topic = message.data["response_topic"]
+        elif isinstance(message.payload, dict) and "response_topic" in message.payload:
+            response_topic = message.payload["response_topic"]
             
         if not response_topic:
             raise ValueError("Cannot respond to a message without a response topic")
+        
+        # Merge headers with context headers and message headers
+        merged_headers = current_headers.get().copy()
+        if message.headers:
+            merged_headers.update(message.headers)
+        if headers:
+            merged_headers.update(headers)
             
-        # Publish the response to the response topic
-        await self.publish(response_topic, response)
+        # Publish the response to the response topic with headers
+        await self.publish(response_topic, response, merged_headers)
 
 
 class MQTTTopic(StandardTopic):

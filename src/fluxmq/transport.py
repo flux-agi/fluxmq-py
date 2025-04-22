@@ -1,8 +1,12 @@
 from abc import ABC, abstractmethod
 from asyncio.queues import Queue
-from typing import Callable, Optional, Union, TypeVar, Generic, Any, Awaitable
+from typing import Callable, Optional, Union, TypeVar, Generic, Any, Awaitable, Dict
+import contextvars
 
 from fluxmq.message import Message
+
+# Context variable to track current headers from received messages
+current_headers = contextvars.ContextVar('current_headers', default={})
 
 T = TypeVar('T')
 MessageType = TypeVar('MessageType', bound=Message)
@@ -49,13 +53,15 @@ class Transport(ABC):
         pass
 
     @abstractmethod
-    async def publish(self, topic: str, payload: Union[bytes, str]) -> None:
+    async def publish(self, topic: str, payload: Union[bytes, str], headers: Optional[Dict[str, str]] = None) -> None:
         """
         Publish a message to a topic.
         
         Args:
             topic: The topic to publish to
             payload: The message payload to publish
+            headers: Optional headers to include with the message. If not provided,
+                     headers from the current message context will be used.
             
         Raises:
             ConnectionError: If not connected to the messaging system
@@ -96,7 +102,7 @@ class Transport(ABC):
         pass
 
     @abstractmethod
-    async def request(self, topic: str, payload: Union[bytes, str]) -> Message:
+    async def request(self, topic: str, payload: Union[bytes, str], headers: Optional[Dict[str, str]] = None) -> Message:
         """
         Send a request and wait for a response.
         
@@ -106,6 +112,8 @@ class Transport(ABC):
         Args:
             topic: The topic to send the request to
             payload: The request payload
+            headers: Optional headers to include with the request. If not provided,
+                     headers from the current message context will be used.
             
         Returns:
             The response message
@@ -118,13 +126,15 @@ class Transport(ABC):
         pass
 
     @abstractmethod
-    async def respond(self, message: Message, response: Union[bytes, str]) -> None:
+    async def respond(self, message: Message, response: Union[bytes, str], headers: Optional[Dict[str, str]] = None) -> None:
         """
         Respond to a request message.
         
         Args:
             message: The request message to respond to
             response: The response data
+            headers: Optional headers to include with the response. If not provided,
+                     headers from the current message context will be used.
             
         Raises:
             ConnectionError: If not connected to the messaging system
@@ -166,13 +176,15 @@ class SyncTransport(ABC):
         pass
 
     @abstractmethod
-    def publish(self, topic: str, payload: Union[bytes, str]) -> None:
+    def publish(self, topic: str, payload: Union[bytes, str], headers: Optional[Dict[str, str]] = None) -> None:
         """
         Publish a message to a topic.
         
         Args:
             topic: The topic to publish to
             payload: The message payload to publish
+            headers: Optional headers to include with the message. If not provided,
+                     headers from the current message context will be used.
             
         Raises:
             ConnectionError: If not connected to the messaging system
@@ -213,7 +225,7 @@ class SyncTransport(ABC):
         pass
 
     @abstractmethod
-    def request(self, topic: str, payload: Union[bytes, str]) -> Message:
+    def request(self, topic: str, payload: Union[bytes, str], headers: Optional[Dict[str, str]] = None) -> Message:
         """
         Send a request and wait for a response.
         
@@ -223,6 +235,8 @@ class SyncTransport(ABC):
         Args:
             topic: The topic to send the request to
             payload: The request payload
+            headers: Optional headers to include with the request. If not provided,
+                     headers from the current message context will be used.
             
         Returns:
             The response message
@@ -235,13 +249,15 @@ class SyncTransport(ABC):
         pass
 
     @abstractmethod
-    def respond(self, message: Message, response: Union[bytes, str]) -> None:
+    def respond(self, message: Message, response: Union[bytes, str], headers: Optional[Dict[str, str]] = None) -> None:
         """
         Respond to a request message.
         
         Args:
             message: The request message to respond to
             response: The response data
+            headers: Optional headers to include with the response. If not provided,
+                     headers from the current message context will be used.
             
         Raises:
             ConnectionError: If not connected to the messaging system
